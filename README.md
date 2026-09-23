@@ -123,7 +123,7 @@ Measured on 2026-09-18 across five real documents from 1,244 to 723,613 nodes
 - DOM traversal in JavaScript before it: **79 ms** — about 90% of total time, and
   the actual bottleneck
 - WASM size in that spike: **22 KB gzipped** for its own arena plus 20 simple
-  rules. The shipped module is larger — 80.3 KB gzipped — because it carries the
+  rules. The shipped module is larger — 80.1 KB gzipped — because it carries the
   full `a11y-rules` set and the name computation from `accname`. Performance is
   therefore neither an argument for nor against WASM; the reason is rule reuse
   across three surfaces.

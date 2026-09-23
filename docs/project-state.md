@@ -261,9 +261,9 @@ Collector. Sie kommt mit der ersten Regel, die sie braucht — Zielgrößen.
 
 ## Bundle-Größe
 
-`dist/inspector.js` 46,3 KB roh / **16,2 KB gzip**, `dist/inspector_bg.wasm`
-166,7 KB roh / **80,3 KB gzip**. Gesamt 96,5 KB gzip (21.09.2026, a11y-core
-0.10.0, mit Live-Modus und seinem Schalter). Das JavaScript liegt damit bei
+`dist/inspector.js` 46,1 KB roh / **16,1 KB gzip**, `dist/inspector_bg.wasm`
+166,7 KB roh / **80,1 KB gzip**. Gesamt 96,2 KB gzip (23.09.2026, a11y-core
+0.11.0, mit Live-Modus und englischen Texten). Das JavaScript liegt damit bei
 **81 % seiner Grenze von 20 KB**.
 
 Der Zuwachs des WASM von 63,1 auf 79,5 KB verteilt sich auf `a11y-core` 0.7.0
