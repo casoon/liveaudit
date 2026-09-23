@@ -144,7 +144,7 @@ nicht verhandelbar.
 
 ## Der Inspector-Layer, gemessen (18.09.2026, Chromium)
 
-Die Abnahmekriterien aus [build-plan.md](build-plan.md) sind messbar. Gemessen
+Die harten Vorgaben aus [decisions.md](decisions.md) sind messbar. Gemessen
 über `examples/inspector.html` (30 Elemente im Prüfbereich, 16 Befunde), jeweils
 unmittelbar vor und nach `LiveAudit.show()` im selben Lauf:
 
@@ -180,8 +180,8 @@ Element. Andockschaltflächen, Ziehgriff und Kopfleiste tragen alle einen Namen.
 
 ## Was Tier 3 kostet (20.09.2026, Chromium, Apple Silicon)
 
-Die offene Frage aus [build-plan.md](build-plan.md) — „Tier 3 messen, bevor
-Kontrast gebaut wird" — ist beantwortet. Reproduzierbar über
+Die Frage, was ein Durchgang mit Layout und berechneten Stilen kostet, war vor
+dem Bau der Kontrastprüfung zu beantworten. Reproduzierbar über
 `examples/tier3.html`.
 
 Gemessen wird in einem **iframe mit echtem Layout**: An einem

@@ -50,7 +50,8 @@ size.
 | `packages/liveaudit` — public API | **done** — `init`/`scan`/`show`/`dock`/`hide` |
 | Delivery model — CSP, gating, bundle budget | **done** — see below |
 | Tier 3 — contrast | **done** — opt-in pass, see above |
-| Tier 3 geometry and tier 4 — focus order, target size, live mode | open |
+| Live mode — rescan on mutation | **done** — changed subtree only |
+| Tier 4 — focus order, target size, reflow | open |
 
 All five steps of [docs/build-plan.md](docs/build-plan.md) are done; the current
 state is in [docs/project-state.md](docs/project-state.md).
