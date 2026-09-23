@@ -1,7 +1,7 @@
 # Architecture — LiveAudit
 
-> Status: Zielarchitektur für V1, noch nicht implementiert. Siehe
-> [project-state.md](project-state.md).
+Die Architektur, wie sie gebaut ist. Der Stand im Einzelnen steht in
+[project-state.md](project-state.md).
 
 ## Pipeline
 
@@ -12,27 +12,36 @@ die Schicht, die den Browser versteht — WASM selbst hat keinen Browser-Zugriff
 ```mermaid
 flowchart TB
   Site["Beliebige Webseite\n(WordPress · Astro · React · Vue · PHP · HTML)"]
-  Adapter["packages/browser (TypeScript)\nDOM · CSSOM · Events · Focus · Geometry\nMutationObserver · IntersectionObserver · Shadow DOM"]
+  Entry["packages/liveaudit (TypeScript)\nFreischaltung · öffentliche API"]
+  Adapter["packages/browser (TypeScript)\nDOM · Shadow DOM · Frames\nTier-3-Stile · MutationObserver"]
   Core["packages/core (Rust → WASM)\na11y-dom · a11y-rules · accname · a11y-report"]
-  UI["packages/ui (TypeScript + CSS)\nInspector-Layer · Marker · Rahmen · Panel · Fokusmodus"]
+  UI["packages/ui (TypeScript + CSS)\nInspector-Layer · Rahmen · Marker · Seitenleiste"]
 
-  Site -->|"<script src=inspector.js>"| Adapter
+  Site -->|"<script src=inspector.js>"| Entry
+  Entry -->|"scan()"| Adapter
   Adapter -->|"Arena im WASM-Speicher"| Core
-  Core -->|"Finding[]"| UI
+  Core -->|"Finding[]"| Entry
+  Entry -->|"show()"| UI
 ```
 
-Der Rust-Core ist bewusst von der Browser-Welt entkoppelt, damit er später auch
-in CLI oder CI/CD wiederverwendbar ist — vorgesehen, aber nicht Teil von V1.
+Der Rust-Core ist bewusst von der Browser-Welt entkoppelt: Dieselben Crates
+laufen in `astro-post-audit` zur Build-Zeit und in `auditmysite` über CDP. Ein
+eigenes CLI gehört deshalb nicht in dieses Repository.
 
 ## Paketstruktur
 
 ```
 liveaudit/
 packages/
-├── core/     Rust → WASM
-├── browser/  TypeScript
-└── ui/       TypeScript + CSS
+├── core/       Rust → WASM
+├── browser/    TypeScript
+├── ui/         TypeScript + CSS
+└── liveaudit/  TypeScript: Freischaltung und öffentliche API
 ```
+
+Die Abhängigkeiten laufen in eine Richtung: `liveaudit → ui → browser → core`.
+Läge die öffentliche API in `browser`, entstünde ein Zyklus — sie braucht
+`show()`/`hide()` aus `ui`, während `ui` auf `browser` aufbaut.
 
 Build-Output: `dist/inspector.js`, `dist/inspector_bg.wasm`. Der Anwender bindet
 nur `inspector.js` ein, das WASM lädt sich selbst nach.
@@ -102,17 +111,21 @@ berechnet deshalb das `accname`-Crate über der Arena.
 
 ## Analysephasen
 
-Bei großen Seiten (5.000–100.000+ DOM-Nodes) ist ein Vollscan mit
-`getComputedStyle()`/Bounding-Box pro Node zu teuer. Deshalb läuft die Analyse
-gestaffelt:
+Ein Vollscan mit `getComputedStyle()` je Knoten ist auf großen Seiten zu teuer.
+Die Analyse läuft deshalb gestaffelt, und jede Stufe hat ihren eigenen Ort:
 
-1. **Phase 1 — Struktur** (billig, für alle Nodes): Tags, Attribute, Text, Hierarchie.
-2. **Phase 2 — Accessibility Properties** (nur für relevante Elementtypen):
-   `button, a, input, select, textarea, img, svg, video, audio, iframe, table,
-   h1–h6, [role], [aria-*], [tabindex]`.
-3. **Phase 3 — Rendering** (nur wenn eine Regel es konkret braucht):
-   `getComputedStyle()`, `getBoundingClientRect()`, `elementFromPoint()` — z. B.
-   für Kontrastprüfung.
+1. **Struktur** — `packages/browser/src/collect.ts` läuft einmal über den
+   gesamten Baum und füllt die Arena: Tags, Attribute, Text, Hierarchie. Das ist
+   der gemessene Engpass, nicht die WASM-Grenze.
+2. **Semantik** — Rolle und Accessible Name berechnet `accname` **in Rust über
+   der Arena**, nicht JavaScript über dem DOM. Der `accname::IdIndex` entsteht
+   einmal je Scan; je Knoten gebaut würde die Namensauflösung quadratisch.
+3. **Rendering** — `packages/browser/src/rendering.ts`, nur auf Anforderung über
+   `scan(root, { rendering: true })`. Erfasst Farbe, Schriftgröße und -gewicht
+   sowie den effektiven Hintergrund, letzteren über eine Merkliste je
+   Vorfahrenkette: ohne sie läuft die Traversierung über dieselben Vorfahren
+   immer wieder. Geometrie (`bounds`) gehört hierher, ist aber nicht erhoben —
+   sie kommt mit der ersten Regel, die sie braucht.
 
 ## Rule Engine
 
@@ -121,25 +134,22 @@ registriert. `packages/core` wählt die Einstiegsfunktion nach dem, was der
 Collector liefert:
 
 ```rust
-// Nur Struktur
-let report = a11y_rules::run(&arena);
+// Struktur und Semantik — der Normalfall
+let report = a11y_rules::run_with_semantics(&SemanticArena::new(&arena));
 
-// Struktur + Semantik (accname über der Arena)
-let report = a11y_rules::run_with_semantics(&arena_mit_namen);
+// Zusätzlich Tier 3, wenn der Rendering-Durchgang lief
+let report = a11y_rules::run_full(&RenderArena::new(&arena, spalten));
 ```
 
-Beispiel-Finding:
+Ein Finding trägt `rule_id` (etwa `images/alt-missing`), `outcome`, `severity`,
+`message`, WCAG-Bezug und `location.node` — den Arena-Index als Text. Der
+vollständige Vertrag steht als TypeScript-Typ in
+`packages/browser/src/report.ts` und ist über alle drei Oberflächen derselbe;
+die Feldnamen sind die des Rust-Modells und werden nicht umbenannt.
 
-```json
-{
-  "rule": "image-alt",
-  "node": 183,
-  "outcome": "fail",
-  "severity": "error",
-  "wcag": ["1.1.1"],
-  "message": "Das Bild besitzt kein alt-Attribut."
-}
-```
+Daneben liefert der Bericht je Regel einen `RuleRun`: `not_run` sagt, **warum**
+eine Regel nicht lief — `capability_missing`, wenn der Host das Tier nicht
+bedient.
 
 `outcome` und `severity` sind getrennte Dimensionen: *wie sicher* ist die Aussage
 gegenüber *wie schwer* wiegt das Problem. Eine dritte Achse `certainty` gibt es
@@ -195,9 +205,10 @@ Vier Darstellungsvarianten:
    Formulare, ARIA, Tastatur, Kontrast, …). Klick auf ein Finding:
    `element.scrollIntoView({ behavior: "smooth", block: "center" })` gefolgt von
    Marker-Anzeige. Das verbindet Report und reale Seite.
-4. **Fokusreihenfolge** — nummerierte Marker über der tatsächlichen Tab-Reihenfolge,
-   inkl. Auflistung der `tabindex`-Werte, um Fälle wie `tabindex="4"` neben
-   `tabindex="12"` oder unsichtbare fokussierbare Elemente sichtbar zu machen.
+4. **Fokusreihenfolge** — nummerierte Marker über der tatsächlichen
+   Tab-Reihenfolge, inkl. Auflistung der `tabindex`-Werte, um Fälle wie
+   `tabindex="4"` neben `tabindex="12"` oder unsichtbare fokussierbare Elemente
+   sichtbar zu machen. **Braucht Tier 4 und ist nicht gebaut.**
 
 ## Live-Modus
 
@@ -205,41 +216,10 @@ Moderne Seiten (React/Vue/Astro Islands) verändern ihren DOM laufend. Ein
 `MutationObserver` beobachtet das und löst nach einem Debounce von 200 ms einen
 Re-Scan der neuen Nodes aus (nicht der gesamten Seite).
 
-## Langfristige Architektur
+## Umfang
 
-```mermaid
-flowchart TB
-  Scanner["Static Scanner"]
-  Runtime["Runtime Tester"]
-  Manual["Manual Tests"]
-  Engine["Finding Engine\n(Rust/WASM Core)"]
-  Browser["Browser"]
-  CLI["CLI"]
-  CI["CI/CD"]
-  Visual["Visual Inspector"]
-  Frame["Frame"]
-  Marker["Marker"]
-  Sidebar["Sidebar"]
-  TestMode["Test Mode"]
-
-  Scanner --> Engine
-  Runtime --> Engine
-  Manual --> Engine
-  Engine --> Browser
-  Engine --> CLI
-  Engine --> CI
-  Browser --> Visual
-  Visual --> Frame
-  Visual --> Marker
-  Visual --> Sidebar
-  Visual --> TestMode
-```
-
-## V1-Scope
-
-Für V1 bewusst klein: TypeScript DOM Collector → Arena →
-Rust/WASM Rule Engine → `Finding[]` → TypeScript Inspector-Layer mit Rahmen/Marker und
-Seitenpanel. Dazu ca. 20 deterministische Regeln für HTML, ARIA, Formulare,
-Bilder und Struktur; der Katalog steht in `a11y-rules`. Kontrast,
-Fokus-/Tab-Reihenfolge, Live-Modus, interaktive Tests und CLI/CI kommen erst
-danach dazu.
+Gebaut ist die Kette DOM Collector → Arena → Rule Engine → `Finding[]` →
+Inspector-Layer, dazu der Tier-3-Durchgang für Kontrast und der Live-Modus. Der
+Regelkatalog steht in `a11y-rules` und wächst dort, nicht hier. Was noch fehlt —
+Tier 4, npm-Paket, Konformitäts-Korpus — steht mit Abnahmekriterien in
+[build-plan.md](build-plan.md).
