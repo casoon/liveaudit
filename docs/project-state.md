@@ -14,7 +14,12 @@ Das Script lädt die WASM-Analyse-Engine selbst nach und zeigt Befunde direkt au
 der untersuchten Seite an (Inspector-Layer), statt einen externen Report zu
 erzeugen — das ist der Unterschied zu Lighthouse/klassischen Scan-Reports.
 
-## Status (19.09.2026)
+## Status (23.09.2026)
+
+**LiveAudit ist veröffentlicht.** Das Repository liegt öffentlich unter
+[github.com/casoon/liveaudit](https://github.com/casoon/liveaudit) unter MIT, die
+Projektseite läuft auf <https://casoon.github.io/liveaudit/>. Ein npm-Paket gibt
+es noch nicht; wer es einbinden will, baut die beiden Dateien selbst.
 
 **LiveAudit ist lauffähig und auslieferbar.** Alle fünf Schritte aus
 [build-plan.md](build-plan.md) sind gebaut: `pnpm build` erzeugt
@@ -39,6 +44,7 @@ wer sich darauf verlässt, bekommt einen `ReferenceError` statt einer Erklärung
 | Schritt 3 — `packages/core` (Rule Engine angebunden) | **fertig** |
 | Schritt 4 — `packages/ui` (Inspector-Layer) | **fertig** |
 | Schritt 5 — Auslieferungsmodell | **fertig** |
+| Veröffentlichung | **fertig** — öffentliches Repository, Projektseite live |
 
 ## Was gebaut ist
 
@@ -301,6 +307,8 @@ nur über Linktext und Klassennamen erraten.
 - **esbuild** bündelt zu `dist/inspector.js`; das WASM lädt sich über
   `new URL(..., import.meta.url)` selbst nach
 - **Node ≥ 22**, pnpm-Workspace, **Biome** für Lint und Format
+- Ein `tsconfig.json` an der Wurzel prüft alle Pakete; TypeScript-Projekt-
+  referenzen gibt es bewusst nicht
 - Tests: `cargo test` für den Adapter, `node --test` mit **jsdom** für Collector
   und Scan, **Playwright** für den Inspector-Layer — siehe unten.
 
@@ -414,7 +422,9 @@ in zwei Schritten: `pnpm build` an der Wurzel erzeugt `dist/`,
 `pnpm --filter liveaudit-site build` kopiert das Ergebnis über
 `scripts/site-demo.js` nach `site/public/demo/` und baut die Seite.
 `.github/workflows/pages.yml` macht beides — ohne den Rust-Schritt stünde auf der
-Demo-Seite eine Schaltfläche, die nichts findet. Die kopierten Artefakte sind
+Demo-Seite eine Schaltfläche, die nichts findet. Die Pages-Quelle ist „GitHub
+Actions"; der Workflow läuft bei jedem Push auf `main` und veröffentlicht
+`site/dist`. Die kopierten Artefakte sind
 ignoriert; committet ist nur `site/public/demo/start.js`.
 
 Biome kennt `.astro` nur bis zum Frontmatter: Es liest den TypeScript-Kopf,
@@ -442,30 +452,19 @@ Zwei Befunde aus dem Bau:
 
 ## Nächste Schritte
 
-Die fünf Schritte aus [build-plan.md](build-plan.md) sind abgeschlossen; was
-danach kommt, steht dort unter „Danach" — Tier-3-Messung, Live-Modus, Kontrast
-und Fokusreihenfolge, Konformitäts-Korpus. Offen aus diesem Durchgang:
+Die fünf Schritte aus [build-plan.md](build-plan.md) sind abgeschlossen, dazu
+Tier 3 mit Kontrast und der Live-Modus. Offen bleiben aus dem Abschnitt „Danach"
+die Tier-4-Prüfungen — Fokusreihenfolge, Zielgrößen, Reflow, Medien-Prüfliste —
+und der Konformitäts-Korpus über alle drei Repositories. Offen aus diesem
+Durchgang:
 
 - **Bereichsbewusste ID-Auflösung** über Shadow-Grenzen — ein Befund für
   `a11y-core`, keine Regel für dieses Repository. Siehe
   [constraints.md](constraints.md).
 - **Nur Chromium gemessen.** Firefox und Safari haben andere DOM-Zugriffskosten.
-- ~~**Die Gruppe „Regeln ohne Lauf“ bleibt in der Praxis leer.**~~ **Erledigt
-  am 21.09.2026.** Der Befund stammte aus der Zeit vor Tier 3: `a11y-rules`
-  0.3.0 lieferte 24 `rule_runs` ohne einen einzigen `not_run`. Seit 0.7.0 gibt
-  es die beiden Kontrastregeln, und ohne den Kontrastdurchgang melden sie
-  `capability_missing`. Zwei Fälle in `tests/browser/regeln-ohne-lauf.spec.ts`
-  belegen beide Richtungen: ohne Durchgang nennt die Seitenleiste beide
-  Kennungen samt Grund, mit Durchgang verschwindet die Gruppe.
 - **`prefers-reduced-motion` ist umgesetzt, aber nicht per Emulation geprüft.**
   Der Pfad ist eine Media Query im Stylesheet und `matchMedia` vor
   `scrollIntoView`.
-- **`packages/browser` und `packages/ui` hängen zyklisch voneinander ab.** Der
-  Layer braucht `elementOf` und `HOST_TAG_NAME`, die öffentliche API in
-  `packages/browser/src/index.ts` braucht `show()`/`hide()`. pnpm warnt darüber
-  und installiert trotzdem; sauber aufzulösen wäre ein eigenes Einstiegspaket.
-  Aus demselben Grund gibt es keine TypeScript-Projektreferenzen mehr: Ein
-  einziges `tsconfig.json` an der Wurzel prüft beide Pakete.
 
 ## Weiterführende Dokumente
 
