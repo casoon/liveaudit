@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Live-Modus</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { margin: 0; padding: 24px; font: 16px/1.6 system-ui, sans-serif; }
+      #bereich { border: 1px solid #d4d4d8; padding: 16px; min-height: 120px; }
+      #ausserhalb { margin-top: 16px; }
+    </style>
+  </head>
+  <body>
+    <!-- Landmarks und Sprunglink, damit die dokumentweiten Regeln ruhig sind
+         und die Zählung im Test nur zeigt, was sich wirklich ändert. -->
+    <a href="#inhalt">Zum Inhalt</a>
+    <header><nav aria-label="Haupt"><a href="/">Start</a></nav></header>
+    <main id="inhalt">
+      <h1>Live-Modus</h1>
+      <div id="bereich">
+        <p>Dieser Bereich verändert sich im Test.</p>
+      </div>
+      <div id="ausserhalb">
+        <!-- buttons/name-missing: bleibt unberührt und muss den Neuscan
+             eines anderen Teilbaums überstehen. -->
+        <button type="button" id="dauerbefund"></button>
+      </div>
+    </main>
+    <footer>Fuß</footer>
+
+    <script type="module">
+      import { enable } from "../../../dist/inspector.js";
+
+      enable();
+
+      const bereich = document.getElementById("bereich");
+
+      // Die Seite ändert sich, wie eine echte Seite sich ändert: aus eigenem
+      // Antrieb, ohne dass jemand einen Scan anstößt.
+      globalThis.fuegeBefundEin = () => {
+        const bild = document.createElement("img");
+        bild.src =
+          "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+        bild.width = 40;
+        bild.height = 40;
+        bild.id = "neues-bild";
+        bereich.append(bild);
+      };
+
+      globalThis.entferneBefund = () => {
+        document.getElementById("neues-bild")?.remove();
+      };
+
+      globalThis.behebeBefund = () => {
+        document.getElementById("neues-bild")?.setAttribute("alt", "Ein beschriebenes Bild");
+      };
+    </script>
+  </body>
+</html>

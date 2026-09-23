@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "spike",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve", "-l", "5177", "."],
+      "port": 5177
+    },
+    {
+      "name": "liveaudit-static",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "--", "node", "scripts/serve.js"],
+      "port": 4173
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Geometrie: iframe, Shadow Root, Scrollen</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { margin: 0; font: 16px/1.6 system-ui, sans-serif; }
+      /* Der Rahmen trägt eine Rahmenbreite: placementOf() rechnet clientLeft
+         und clientTop mit ein, und genau das soll geprüft sein. */
+      #rahmen { position: absolute; left: 40px; top: 120px; width: 300px; height: 160px; border: 4px solid #333; }
+      #wirt { position: absolute; left: 40px; top: 360px; }
+      .filler { height: 250vh; }
+    </style>
+  </head>
+  <body>
+    <h1>Geometrie</h1>
+
+    <iframe id="rahmen" src="./geometrie-rahmen.html" title="Same-Origin-Rahmen"></iframe>
+    <div id="wirt"></div>
+
+    <div class="filler" aria-hidden="true"></div>
+
+    <script type="module">
+      import { enable } from "../../../dist/inspector.js";
+
+      enable();
+
+      // buttons/name-missing im offenen Shadow Root — der zweite eindeutige
+      // Befund. Über die Kennung lässt sich sein Marker im Test zuordnen.
+      const wirt = document.getElementById("wirt");
+      const shadow = wirt.attachShadow({ mode: "open" });
+      const knopf = document.createElement("button");
+      knopf.type = "button";
+      knopf.style.cssText = "display:block;width:120px;height:40px";
+      shadow.append(knopf);
+    </script>
+  </body>
+</html>

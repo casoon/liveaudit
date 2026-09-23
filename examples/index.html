@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LiveAudit — Beispielseite</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { font: 16px/1.6 system-ui, sans-serif; margin: 2rem auto; max-width: 48rem; }
+      pre { background: #f4f4f5; padding: 1rem; overflow: auto; }
+      .probe { border: 1px solid #d4d4d8; padding: 1rem; margin: 1rem 0; }
+    </style>
+
+    <!--
+      Kein Script-Tag auf dist/inspector.js: Ohne Freischaltung ist das Bundle
+      inert und legt kein globales LiveAudit an. Diese Seite ist der
+      programmgesteuerte Fall und ruft deshalb enable() -- siehe unten.
+    -->
+  </head>
+  <body>
+    <h1>LiveAudit</h1>
+    <p>
+      Dieses Dokument bindet <code>dist/inspector.js</code> ein und ruft
+      <code>LiveAudit.scan()</code> auf. <strong>LiveAudit prüft, es repariert nicht.</strong>
+    </p>
+    <p>
+      Den Inspector-Layer selbst — Rahmen, Marker und Seitenleiste — zeigt
+      <a href="inspector.html">inspector.html</a>.
+    </p>
+
+    <div class="probe">
+      <h3>Absichtliche Fehler zum Ausprobieren</h3>
+      <!-- Ohne alt-Attribut: der Befund entsteht am Markup, nicht am Bildinhalt. -->
+      <img
+        src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+        width="32"
+        height="32"
+      />
+      <input type="text" id="doppelt" />
+      <span id="doppelt"></span>
+      <a href="/ziel"></a>
+      <button tabindex="3"></button>
+      <iframe src="https://example.com/" title="Cross-Origin" width="200" height="60"></iframe>
+    </div>
+
+    <h2>Ergebnis</h2>
+    <pre id="ausgabe">Scan läuft …</pre>
+
+    <script type="module">
+      // Ohne Freischaltung passiert nichts: kein globales LiveAudit, kein
+      // Nachladen des WASM-Moduls. Auf einer echten Seite geschieht das über
+      // ?liveaudit oder den localStorage-Eintrag; wer das Werkzeug
+      // programmgesteuert einsetzt, ruft enable() und umgeht das Flag bewusst.
+      import LiveAudit, { enable } from "../dist/inspector.js";
+
+      enable();
+
+      const ausgabe = document.getElementById("ausgabe");
+      const result = await LiveAudit.scan();
+
+      const zeilen = [];
+      for (const doc of result.documents) {
+        const wo = doc.parent === null ? "Hauptdokument" : `Frame in Knoten ${doc.parent.node}`;
+        zeilen.push(`# ${wo} — ${doc.nodes} Knoten`);
+        for (const f of doc.report.findings) {
+          zeilen.push(`  ${f.outcome.toUpperCase()} [${f.severity}] ${f.rule_id}: ${f.message}`);
+        }
+        for (const u of doc.untested) {
+          zeilen.push(`  UNTESTED ${u.reason}: ${u.src ?? "(ohne src)"}`);
+        }
+      }
+      zeilen.push("");
+      zeilen.push(`Collector: ${result.collectMs.toFixed(1)} ms, gesamt: ${result.totalMs.toFixed(1)} ms`);
+      ausgabe.textContent = zeilen.join("\n");
+    </script>
+  </body>
+</html>

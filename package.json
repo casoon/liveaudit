@@ -1,0 +1,53 @@
+{
+  "name": "liveaudit",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "packageManager": "pnpm@10.26.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build:wasm": "pnpm --filter @liveaudit/core run build",
+    "build:js": "node scripts/bundle.js",
+    "build": "pnpm run build:wasm && pnpm run build:js",
+    "serve": "node scripts/serve.js",
+    "test": "pnpm run build:wasm && pnpm run test:js && cargo test --workspace",
+    "test:rust": "cargo test --workspace",
+    "test:js": "pnpm --filter @liveaudit/browser --filter @liveaudit/liveaudit run test",
+    "test:browser": "pnpm run build && playwright test --project=chromium",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "biome check .",
+    "format": "biome check --write ."
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@biomejs/biome": "^2.3.14",
+    "@playwright/test": "^1.63.0",
+    "esbuild": "^0.27.0",
+    "jsdom": "^28.0.0",
+    "typescript": "^5.9.3"
+  },
+  "scripts-info": {
+    "build": "Baut WASM und Bundle nach dist/, pr\u00fcft das Bundle-Budget",
+    "build:wasm": "Baut nur packages/core nach WASM",
+    "build:js": "B\u00fcndelt nur das JavaScript nach dist/",
+    "serve": "Startet den Beispiel-Server auf http://localhost:4173",
+    "test": "Baut das WASM und f\u00e4hrt JS- und Rust-Tests",
+    "test:js": "Nur die JS-Tests (Collector und Scan, \u00fcber jsdom)",
+    "test:rust": "Nur cargo test \u00fcber den Arena-Adapter",
+    "typecheck": "Pr\u00fcft die Typen \u00fcber alle Pakete",
+    "lint": "Biome \u00fcber das ganze Repo",
+    "format": "Biome mit --write",
+    "test:browser": "Browser-Regressionstests des Inspector-Layers (Chromium); Firefox und WebKit \u00fcber --project"
+  },
+  "opi": {
+    "scripts": {
+      "serve": {
+        "favorite": true,
+        "group": "Beispiele"
+      }
+    }
+  }
+}

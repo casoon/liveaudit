@@ -1,0 +1,19 @@
+{
+  "name": "@liveaudit/browser",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    "./collect": "./src/collect.ts",
+    "./live": "./src/live.ts",
+    "./report": "./src/report.ts",
+    "./scan": "./src/scan.ts"
+  },
+  "scripts": {
+    "test": "node --test --experimental-strip-types test/*.test.ts"
+  },
+  "dependencies": {
+    "@liveaudit/core": "workspace:*"
+  }
+}

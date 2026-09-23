@@ -1,0 +1,16 @@
+plan/
+node_modules/
+dist/
+target/
+packages/core/pkg/
+# Von scripts/site-demo.js aus dist/ kopiert.
+site/public/demo/inspector*
+site/dist/
+# Playwright: Spuren und Bericht eines Laufs.
+test-results/
+playwright-report/
+spike/corpus/
+*.tsbuildinfo
+
+# Worktrees von Agentenlaeufen
+.claude/worktrees/

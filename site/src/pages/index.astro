@@ -1,0 +1,121 @@
+---
+import {
+  Badge,
+  Badges,
+  Button,
+  Callout,
+  CodeBlock,
+  Facts,
+  Features,
+  Hero,
+  Quickstart,
+} from "@casoon/pages-theme/components";
+import Base from "@casoon/pages-theme/layouts/Base.astro";
+import { url } from "@casoon/pages-theme/url";
+
+const embed = `<!-- your own domain, your own copy: there is no CDN -->
+<script type="module" src="/vendor/liveaudit/inspector.js"></script>`;
+
+const usage = `// Nothing registers until the page is unlocked with ?liveaudit
+await LiveAudit.show();                      // scan, then draw the layer
+await LiveAudit.show(el, { rendering: true }); // with the contrast pass
+LiveAudit.hide();                            // nothing of it stays behind`;
+---
+
+<Base>
+  <Hero
+    title="Accessibility inspection where the page actually runs."
+    lead="One script tag on your own site, and findings appear on the affected element — in the page's real state, after every script, embed and client-side render has had its say."
+  >
+    <div class="cta">
+      <Button href={url('demo/')}>See it inspect</Button>
+      <Button href={url('docs/')} variant="secondary">Documentation</Button>
+    </div>
+    <Badges>
+      <Badge>MIT</Badge>
+      <Badge>self-hosted</Badge>
+      <Badge>Rust → WebAssembly</Badge>
+      <Badge>no runtime framework</Badge>
+    </Badges>
+    <CodeBlock slot="output" code={embed} lang="html" title="index.html" label="html" />
+  </Hero>
+
+  <Facts
+    items={[
+      { value: '14.7 kB', label: 'gzipped JavaScript, layer included' },
+      { value: '80.3 kB', label: 'gzipped WebAssembly, the whole rule set' },
+      { value: '4', label: 'states a finding can have — never a score' },
+      { value: '0', label: 'attributes written to the inspected page' },
+    ]}
+  />
+
+  <Features
+    heading="What makes it different"
+    items={[
+      {
+        title: 'Findings on the element, not beside it',
+        body: 'A report tells you that an image on some page has no alt text. The inspector layer puts the finding on that image, in the state the page is actually in — after hydration, after the third-party embed loaded, after the cookie banner appeared.',
+      },
+      {
+        title: 'Two axes, never a percentage',
+        body: 'Outcome says how certain the statement is: FAIL proven, REVIEW suspected, PASS passed, UNTESTED not decidable by machine. Severity says how much it weighs. A single number would hide exactly that difference, so there is none.',
+      },
+      {
+        title: '"Not testable" is not "passed"',
+        body: 'A contrast rule without rendering access reads like a passed check in most tools. Here it reports UNTESTED and names what it could not inspect — text on a gradient has no single background colour to measure, so no verdict is given.',
+      },
+      {
+        title: 'It inspects. It does not repair.',
+        body: 'No data attributes, no inline styles, no rewritten markup: the layer lives in its own host element and positions itself from measurements it reads. This is deliberately not an accessibility overlay: it makes no claim to repair anything.',
+      },
+      {
+        title: 'One rule set, three surfaces',
+        body: 'The rules live in the shared Rust core a11y-core, which also drives astro-post-audit at build time and auditmysite in CI. A finding carries the same rule id in all three. That reuse — not speed — is why the core is Rust.',
+      },
+    ]}
+  />
+
+  <Quickstart
+    lead="LiveAudit is self-hosted: you build it, copy two files into your own project and serve them from your own domain. A centrally hosted script would make someone else's domain a permanent dependency of your site."
+    steps={[
+      'Build it: <code>pnpm install</code>, then <code>pnpm build</code> — the result is <code>dist/inspector.js</code> and <code>dist/inspector_bg.wasm</code>.',
+      'Copy both files next to each other into your own site and add the script tag. The module loads its WebAssembly from beside itself.',
+      'Open the page with <code>?liveaudit</code>. Without the flag the script registers nothing, creates no global and loads no WebAssembly.',
+      'Call <code>LiveAudit.show()</code> from the console or from your own toolbar.',
+    ]}
+  >
+    <CodeBlock code={usage} lang="js" title="on the unlocked page" label="js" />
+  </Quickstart>
+
+  <div class="notes">
+    <Callout type="note" title="Not on a registry yet">
+      <p>
+        The packages are built in this repository and consumed from <code>dist/</code>. Whether
+        v1 also ships as a published npm package is still open — until it is decided, copying
+        the two built files is the supported way in.
+      </p>
+    </Callout>
+
+    <Callout type="caution" title="If your site has a strict Content Security Policy">
+      <p>
+        Instantiating WebAssembly needs <code>wasm-unsafe-eval</code> in
+        <code>script-src</code>. Without it the inspector fails with an error that names the
+        missing directive instead of failing silently.
+      </p>
+    </Callout>
+  </div>
+</Base>
+
+<style>
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 28px;
+  }
+  .notes {
+    max-width: min(var(--max), 760px);
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+</style>

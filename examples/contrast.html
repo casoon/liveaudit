@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>LiveAudit — Kontrast</title>
+    <style>
+      body { font: 16px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 42rem; }
+      .zu-schwach { color: #999999; }           /* 2,85:1 auf Weiß — zu wenig */
+      .knapp-genug { color: #767676; }          /* 4,54:1 — besteht knapp */
+      .gross-und-grau { color: #8c8c8c; font-size: 32px; }  /* 3,5:1 — für großen Text genug */
+      .auf-bild {
+        color: #ffffff;
+        background-image: linear-gradient(90deg, #333, #ccc);
+        padding: 0.5rem;
+      }
+      .versteckt { color: #eeeeee; display: none; }
+      pre { background: #f4f4f5; padding: 1rem; overflow: auto; font-size: 13px; }
+      td, th { padding: 0.25rem 0.75rem; border-bottom: 1px solid #e4e4e7; text-align: left; }
+    </style>
+  </head>
+  <body>
+    <h1>Kontrast, an bekannten Fällen</h1>
+
+    <p class="zu-schwach">Grau auf Weiß, 2,85:1 — muss auffallen.</p>
+    <p class="knapp-genug">#767676 auf Weiß, 4,54:1 — muss bestehen.</p>
+    <p class="gross-und-grau">Großer Text, 3,5:1 — muss bestehen.</p>
+    <p class="auf-bild">Auf einem Verlauf — muss UNTESTED werden, nicht bestanden.</p>
+    <p class="versteckt">Unsichtbar — darf gar nicht erst geprüft werden.</p>
+
+    <h2>Ergebnis</h2>
+    <table id="tabelle">
+      <thead>
+        <tr><th>Erwartung</th><th>Befund</th><th></th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>Alle Kontrastbefunde</h2>
+    <pre id="roh">läuft …</pre>
+
+    <script type="module">
+      // Ein Import, nicht zwei: "?liveaudit" am Modulpfad schaltet nichts frei
+      // -- die Freischaltung liest die Adresse der *Seite*. Es lüde das Bundle
+      // nur ein zweites Mal.
+      import LiveAudit, { enable } from "../dist/inspector.js";
+
+      enable();
+      // Der Tier-3-Durchgang ist nicht Vorgabe — er kostet laut Messung das
+      // 1,9- bis 4,6-fache des Collectors. Hier wird er ausdrücklich verlangt.
+      const result = await LiveAudit.scan(document.documentElement, { rendering: true });
+      const report = result.documents[0].report;
+
+      const kontrast = report.findings.filter((f) => f.rule_id.startsWith("contrast/"));
+      const fuer = (klasse) => {
+        const el = document.querySelector(`.${klasse}`);
+        const id = result.documents[0].elementToId.get(el);
+        return kontrast.find((f) => Number(f.location?.node) === id);
+      };
+
+      const faelle = [
+        ["zu-schwach → contrast/text-insufficient", "zu-schwach",
+         (f) => f?.rule_id === "contrast/text-insufficient"],
+        ["knapp-genug → kein Befund", "knapp-genug", (f) => f === undefined],
+        ["gross-und-grau → kein Befund", "gross-und-grau", (f) => f === undefined],
+        ["auf-bild → untested", "auf-bild",
+         (f) => f?.rule_id === "contrast/text-undetermined" && f.outcome === "untested"],
+        ["versteckt → kein Befund", "versteckt", (f) => f === undefined],
+      ];
+
+      const tbody = document.querySelector("#tabelle tbody");
+      const ergebnisse = [];
+      for (const [beschreibung, klasse, pruefung] of faelle) {
+        const f = fuer(klasse);
+        const ok = pruefung(f);
+        ergebnisse.push({ beschreibung, ok, befund: f?.rule_id ?? "—", outcome: f?.outcome });
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          `<td>${beschreibung}</td><td>${f?.rule_id ?? "—"}</td>` +
+          `<td style="color:${ok ? "#15803d" : "#b91c1c"};font-weight:bold">${ok ? "ok" : "FEHLER"}</td>`;
+        tbody.append(tr);
+      }
+
+      document.querySelector("#roh").textContent = JSON.stringify(
+        kontrast.map((f) => ({ rule_id: f.rule_id, outcome: f.outcome, message: f.message })),
+        null,
+        2,
+      );
+
+      globalThis.__ERGEBNIS__ = {
+        faelle: ergebnisse,
+        alleOk: ergebnisse.every((e) => e.ok),
+        renderingMs: result.renderingMs,
+        collectMs: result.collectMs,
+        offeneRegeln: report.rule_runs.filter((r) => r.not_run !== undefined).map((r) => r.rule_id),
+      };
+      document.title = ergebnisse.every((e) => e.ok) ? "alles ok" : "FEHLER";
+    </script>
+  </body>
+</html>

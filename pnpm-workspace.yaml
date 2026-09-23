@@ -1,0 +1,10 @@
+packages:
+  - packages/*
+  # Die Projektseite. Anders als bei den übrigen Projekten mit dieser Seite gibt
+  # es hier schon einen Workspace — ein zweites Lockfile in site/ würde davon
+  # abdriften, deshalb hängt die Seite mit drin.
+  - site
+
+# esbuild lädt seine plattformabhängige Binärdatei in einem Postinstall-Script.
+onlyBuiltDependencies:
+  - esbuild

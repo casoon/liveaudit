@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kontrast an Shadow-Grenzen</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { margin: 0; padding: 24px; background: #ffffff; color: #1f2937; font: 16px/1.6 system-ui, sans-serif; }
+      /* Deckend dunkel: Die Fläche hinter dem Text im Shadow Root kommt von hier. */
+      .wirt { background: #111827; padding: 16px; }
+    </style>
+  </head>
+  <body>
+    <h1>Kontrast an Shadow-Grenzen</h1>
+
+    <!-- Fall 1 und 2: Text im Shadow Root, Hintergrund am Host. -->
+    <div id="wirt-a" class="wirt"></div>
+
+    <!-- Fall 3: Der geslottete Absatz steht im Licht-DOM unter weißem Grund,
+         gezeichnet wird er aber dort, wo der Slot steht — auf Dunkel. -->
+    <div id="wirt-b">
+      <p id="geslottet" style="color: #1f2937">
+        Geslotteter Text: im Licht-DOM unter Weiß, gezeichnet auf Dunkel.
+      </p>
+    </div>
+
+    <script type="module">
+      import { enable } from "../../../dist/inspector.js";
+
+      enable();
+
+      // Der Shadow Root selbst hat keinen Hintergrund. Wer bei `parentElement`
+      // stehen bleibt, landet nicht beim Host, sondern beim Dokument.
+      const a = document.getElementById("wirt-a").attachShadow({ mode: "open" });
+      a.innerHTML =
+        '<p id="dunkel-auf-dunkel" style="color: #1f2937">' +
+        "Dunkles Grau auf dunklem Host: rund 1,3:1 — das muss auffallen.</p>" +
+        '<p id="hell-auf-dunkel" style="color: #f9fafb">' +
+        "Fast Weiß auf dunklem Host: rund 16:1 — das muss bestehen.</p>";
+
+      const b = document.getElementById("wirt-b").attachShadow({ mode: "open" });
+      b.innerHTML = '<div style="background: #111827; padding: 16px"><slot></slot></div>';
+    </script>
+  </body>
+</html>

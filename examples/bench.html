@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>LiveAudit — Collector-Messung</title>
+    <style>
+      body { font: 14px/1.5 ui-monospace, monospace; margin: 2rem; }
+      td, th { padding: 0.25rem 0.75rem; text-align: right; border-bottom: 1px solid #e4e4e7; }
+      th:first-child, td:first-child { text-align: left; }
+      .ok { color: #15803d; }
+      .bad { color: #b91c1c; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <h1>Collector-Messung über <code>spike/corpus/</code></h1>
+    <p>
+      Gleiches Vorgehen wie im Spike: <code>DOMParser</code>-Dokumente, ein Warmlauf,
+      danach Median aus fünf Läufen. Vergleichswerte aus
+      <code>spike/ERGEBNIS.md</code>, Spalte „Collect opt.".
+    </p>
+    <table id="tabelle">
+      <thead>
+        <tr>
+          <th>Seite</th>
+          <th>TreeWalker</th>
+          <th>Arena</th>
+          <th>gleich?</th>
+          <th>Collect (ms)</th>
+          <th>collect2.js (ms)</th>
+          <th>ERGEBNIS.md (ms)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <script type="module">
+      import { collect, countNodes } from "../dist/inspector.js";
+      // Die Vorlage selbst, unverändert aus dem Spike — damit der Vergleich im
+      // selben Browser und auf denselben Dokumenten stattfindet.
+      import { collectFlat2 } from "../spike/harness/collect2.js";
+
+      // Die Zahlen aus spike/ERGEBNIS.md, Spalte "Collect opt.".
+      const KORPUS = [
+        ["wordpress-news", 4],
+        ["mdn-document", 16],
+        ["whatwg-parsing", 79],
+        ["tc39-ecma262", 274],
+        ["whatwg-full", 466],
+      ];
+
+      const median = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+
+      const tbody = document.querySelector("#tabelle tbody");
+      const results = [];
+
+      for (const [name, spike] of KORPUS) {
+        const html = await (await fetch(`../spike/corpus/${name}.html`)).text();
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const root = doc.documentElement;
+
+        const walker = countNodes(root);
+
+        const messen = (fn) => {
+          fn(root); // Warmlauf
+          const zeiten = [];
+          for (let i = 0; i < 5; i++) {
+            const t0 = performance.now();
+            fn(root);
+            zeiten.push(performance.now() - t0);
+          }
+          return median(zeiten);
+        };
+
+        const ms = messen(collect);
+        const vorlage = messen(collectFlat2);
+        const nodes = collect(root).columns.nodes;
+        const gleich = nodes === walker;
+        results.push({ name, walker, nodes, gleich, ms, vorlage, spike });
+
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          `<td>${name}</td><td>${walker.toLocaleString("de")}</td>` +
+          `<td>${nodes.toLocaleString("de")}</td>` +
+          `<td class="${gleich ? "ok" : "bad"}">${gleich ? "ja" : "NEIN"}</td>` +
+          `<td>${ms.toFixed(1)}</td><td>${vorlage.toFixed(1)}</td><td>${spike}</td>`;
+        tbody.append(tr);
+      }
+
+      globalThis.__RESULTS__ = results;
+      document.title = "fertig";
+    </script>
+  </body>
+</html>

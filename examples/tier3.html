@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>LiveAudit — Tier-3-Messung</title>
+    <style>
+      body { font: 14px/1.5 ui-monospace, monospace; margin: 2rem; max-width: 70rem; }
+      td, th { padding: 0.25rem 0.6rem; text-align: right; border-bottom: 1px solid #e4e4e7; }
+      th:first-child, td:first-child { text-align: left; }
+      .teuer { color: #b91c1c; font-weight: bold; }
+      iframe { position: absolute; left: -10000px; width: 1280px; height: 900px; border: 0; }
+      p { max-width: 46rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Was Tier 3 kostet</h1>
+    <p>
+      Der Spike hat nur Tags und Attribute gesammelt. Tier 3 braucht
+      <code>getComputedStyle()</code> und <code>getBoundingClientRect()</code> —
+      beides setzt ein <strong>gerendertes</strong> Dokument voraus. An einem
+      <code>DOMParser</code>-Dokument liefern sie leere Werte und kosten nichts;
+      gemessen wird deshalb in einem iframe mit echtem Layout.
+    </p>
+    <p>
+      Jeder Durchgang wird <strong>kalt</strong> gemessen: Vor dem Lauf wird über
+      eine Breitenänderung am <code>&lt;html&gt;</code>-Element Stil und Layout
+      verworfen, damit nicht der zweite Lauf aus dem Cache gemessen wird. Für ein
+      einmaliges Scan ist genau das der Fall, der zählt. Der warme Wert steht
+      daneben, damit der Unterschied sichtbar bleibt.
+    </p>
+
+    <table id="tabelle">
+      <thead>
+        <tr>
+          <th>Seite</th>
+          <th>Elemente</th>
+          <th>Collector (T1/T2)</th>
+          <th>rects kalt</th>
+          <th>rects warm</th>
+          <th>Stil kalt</th>
+          <th>Stil warm</th>
+          <th>Hintergrund naiv</th>
+          <th>Hintergrund memo</th>
+          <th>T3 memo</th>
+          <th>Faktor</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <p id="stand">Läuft …</p>
+
+    <script type="module">
+      import { collect } from "../dist/inspector.js";
+
+      // Dieselben fünf Dokumente wie in spike/ERGEBNIS.md und examples/bench.html.
+      // Die beiden größten sind im iframe zäh, gehören aber dazu — sie sind der
+      // Fall, an dem sich entscheidet, ob Tier 3 tragfähig ist.
+      const KORPUS = [
+        "wordpress-news",
+        "mdn-document",
+        "whatwg-parsing",
+        "tc39-ecma262",
+        "whatwg-full",
+      ];
+
+      const tbody = document.querySelector("#tabelle tbody");
+      const stand = document.querySelector("#stand");
+      const results = [];
+
+      /** Verwirft Stil und Layout, damit der nächste Zugriff neu rechnen muss. */
+      function kaltStellen(win) {
+        const el = win.document.documentElement;
+        el.style.paddingRight = el.style.paddingRight === "1px" ? "0px" : "1px";
+        // Erzwingt die Neuberechnung nicht selbst — das tut erst der Messlauf.
+      }
+
+      function messen(fn, win, laeufe = 3) {
+        const zeiten = [];
+        for (let i = 0; i < laeufe; i++) {
+          kaltStellen(win);
+          const t0 = performance.now();
+          fn();
+          zeiten.push(performance.now() - t0);
+        }
+        return [...zeiten].sort((a, b) => a - b)[Math.floor(laeufe / 2)];
+      }
+
+      function warm(fn, laeufe = 3) {
+        fn();
+        const zeiten = [];
+        for (let i = 0; i < laeufe; i++) {
+          const t0 = performance.now();
+          fn();
+          zeiten.push(performance.now() - t0);
+        }
+        return [...zeiten].sort((a, b) => a - b)[Math.floor(laeufe / 2)];
+      }
+
+      /**
+       * Der echte Hintergrund eines Elements. `computedStyle.backgroundColor`
+       * allein reicht nicht: Ist er durchsichtig, liegt die Farbe bei einem
+       * Vorfahren. Das ist die Traversierung, vor der spike/ERGEBNIS.md warnt.
+       */
+      function effektiverHintergrund(el, win) {
+        let cur = el;
+        while (cur) {
+          const bg = win.getComputedStyle(cur).backgroundColor;
+          if (bg && bg !== "transparent" && !bg.startsWith("rgba(0, 0, 0, 0)")) return bg;
+          cur = cur.parentElement;
+        }
+        return "rgb(255, 255, 255)";
+      }
+
+      /**
+       * Dasselbe, aber mit Merkliste je Element. Die Traversierung läuft über
+       * dieselben Vorfahren immer wieder; gemerkt wird jeder Zwischenstand, so
+       * dass jedes Element höchstens einen `getComputedStyle`-Aufruf kostet.
+       */
+      function effektiverHintergrundMemo(el, win, memo) {
+        const kette = [];
+        let cur = el;
+        let ergebnis = null;
+        while (cur) {
+          const bekannt = memo.get(cur);
+          if (bekannt !== undefined) {
+            ergebnis = bekannt;
+            break;
+          }
+          const bg = win.getComputedStyle(cur).backgroundColor;
+          if (bg && bg !== "transparent" && !bg.startsWith("rgba(0, 0, 0, 0)")) {
+            ergebnis = bg;
+            break;
+          }
+          kette.push(cur);
+          cur = cur.parentElement;
+        }
+        if (ergebnis === null) ergebnis = "rgb(255, 255, 255)";
+        for (const k of kette) memo.set(k, ergebnis);
+        if (cur) memo.set(cur, ergebnis);
+        return ergebnis;
+      }
+
+      for (const name of KORPUS) {
+        stand.textContent = `Lädt ${name} …`;
+
+        const frame = document.createElement("iframe");
+        frame.src = `../spike/corpus/${name}.html`;
+        document.body.append(frame);
+        await new Promise((fertig) => {
+          frame.addEventListener("load", fertig, { once: true });
+        });
+
+        const win = frame.contentWindow;
+        const doc = win.document;
+        const elemente = Array.from(doc.querySelectorAll("*"));
+
+        stand.textContent = `Misst ${name} (${elemente.length.toLocaleString("de")} Elemente) …`;
+        // Dem Browser Zeit geben, das erste Layout abzuschließen.
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+        const collector = warm(() => collect(doc.documentElement));
+
+        const rects = () => {
+          let summe = 0;
+          for (const el of elemente) summe += el.getBoundingClientRect().width;
+          return summe;
+        };
+        const stil = () => {
+          let n = 0;
+          for (const el of elemente) {
+            const cs = win.getComputedStyle(el);
+            // Die Eigenschaften, die Kontrast und Zielgröße brauchen.
+            if (cs.color && cs.backgroundColor && cs.fontSize && cs.fontWeight) n++;
+          }
+          return n;
+        };
+        const hintergrund = () => {
+          let n = 0;
+          for (const el of elemente) if (effektiverHintergrund(el, win)) n++;
+          return n;
+        };
+        const hintergrundMemo = () => {
+          const memo = new Map();
+          let n = 0;
+          for (const el of elemente) if (effektiverHintergrundMemo(el, win, memo)) n++;
+          return n;
+        };
+
+        const rectsKalt = messen(rects, win);
+        const rectsWarm = warm(rects);
+        const stilKalt = messen(stil, win);
+        const stilWarm = warm(stil);
+        const bgKalt = messen(hintergrund, win, 2);
+        const bgMemo = messen(hintergrundMemo, win, 2);
+
+        // Was ein Tier-3-Scan tatsächlich kostet: Geometrie plus Stil plus die
+        // Hintergrund-Traversierung, einmal kalt. Die memoisierte Variante ist
+        // der Weg, den ein echter Scan nehmen wuerde.
+        const t3 = rectsKalt + stilKalt + bgKalt;
+        const t3Memo = rectsKalt + stilKalt + bgMemo;
+        const faktor = t3Memo / collector;
+
+        results.push({
+          name,
+          elemente: elemente.length,
+          collector,
+          rectsKalt,
+          rectsWarm,
+          stilKalt,
+          stilWarm,
+          bgKalt,
+          bgMemo,
+          t3,
+          t3Memo,
+          faktor,
+        });
+
+        const tr = document.createElement("tr");
+        const z = (x) => x.toFixed(1);
+        tr.innerHTML =
+          `<td>${name}</td>` +
+          `<td>${elemente.length.toLocaleString("de")}</td>` +
+          `<td>${z(collector)}</td>` +
+          `<td>${z(rectsKalt)}</td><td>${z(rectsWarm)}</td>` +
+          `<td>${z(stilKalt)}</td><td>${z(stilWarm)}</td>` +
+          `<td>${z(bgKalt)}</td><td>${z(bgMemo)}</td>` +
+          `<td class="teuer">${z(t3Memo)}</td>` +
+          `<td class="${faktor > 3 ? "teuer" : ""}">${faktor.toFixed(1)}×</td>`;
+        tbody.append(tr);
+
+        frame.remove();
+      }
+
+      globalThis.__RESULTS__ = results;
+      stand.textContent = "fertig";
+      document.title = "fertig";
+    </script>
+  </body>
+</html>

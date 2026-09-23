@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LiveAudit — Strukturregeln aus a11y-rules 0.8.0</title>
+    <style>
+      body { font: 15px/1.6 system-ui, sans-serif; margin: 2rem; max-width: 62rem; }
+      p { max-width: 46rem; }
+      table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
+      td, th { padding: 0.3rem 0.6rem; border-bottom: 1px solid #e4e4e7; text-align: left; vertical-align: top; }
+      th { font-weight: 600; }
+      code { font: 13px ui-monospace, monospace; background: #f4f4f5; padding: 0 0.2em; }
+      .ok { color: #15803d; font-weight: bold; }
+      .bad { color: #b91c1c; font-weight: bold; }
+      .fail { color: #b91c1c; }
+      .review { color: #6d28d9; }
+      .keiner { color: #71717a; }
+      iframe { position: absolute; left: -10000px; width: 900px; height: 600px; border: 0; }
+      h2 { margin-top: 2.5rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Die neun Strukturregeln aus a11y-rules 0.8.0</h1>
+    <p>
+      Jeder Fall ist ein <strong>eigenes Dokument</strong> — Landmarks, Sprunglink und
+      Viewport sind dokumentweite Aussagen, die sich auf einer Seite nicht nebeneinander
+      zeigen lassen. Die Dokumente entstehen als <code>srcdoc</code>-iframe und werden
+      einzeln gescannt.
+    </p>
+    <p>
+      Alle Fälle gehen von <em>einem</em> vollständigen Dokument aus und ändern daran
+      genau eine Sache. Was „vollständig" heißt, steht in der ersten Zeile: Ohne
+      Landmarks, Sprunglink und Viewport-Angabe bleibt ein Dokument seit 0.8.0 nicht
+      mehr befundfrei.
+    </p>
+    <p>
+      Die zweite Achse trägt den Unterschied: <span class="fail">FAIL</span> heißt
+      belegt, <span class="review">REVIEW</span> heißt erwartet. Eine Seite darf ohne
+      Navigation auskommen, mehrere <code>h1</code> sind in HTML zulässig, und ein
+      Sprunglink ist nur über Linktext und Klassennamen zu erraten.
+    </p>
+
+    <h2>Die neun Regeln</h2>
+    <table id="regeln">
+      <thead>
+        <tr><th>Fall</th><th>Kennung</th><th>Soll</th><th>Ist</th><th></th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>Gegenproben</h2>
+    <p>
+      Die Stellen, an denen eine naive Umsetzung danebenliegt. Sie sind der Grund, warum
+      die Regeln im gemeinsamen Kern stehen und nicht je Werkzeug neu geschrieben werden.
+    </p>
+    <table id="gegenproben">
+      <thead>
+        <tr><th>Fall</th><th>Kennung</th><th>Soll</th><th>Ist</th><th></th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <p id="stand">läuft …</p>
+
+    <script type="module">
+      // Ein Import, nicht zwei: "?liveaudit" am Modulpfad schaltet nichts frei
+      // -- die Freischaltung liest die Adresse der *Seite*. Es lüde das Bundle
+      // nur ein zweites Mal.
+      import LiveAudit, { enable } from "../dist/inspector.js";
+
+      enable();
+
+      /** Die Bestandteile eines vollständigen Dokuments. */
+      const TEILE = {
+        viewport: '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        skip: '<a href="#inhalt" class="skip-link">Zum Inhalt springen</a>',
+        header: "<header><nav><a href=\"/\">Start</a></nav></header>",
+        main: '<main id="inhalt"><h1>Titel</h1><p>Text.</p></main>',
+        footer: "<footer>Impressum</footer>",
+      };
+
+      /** Ein Dokument, das sich vom vollständigen in genau einem Punkt unterscheidet. */
+      const dok = (aenderung = {}) => {
+        const t = { ...TEILE, ...aenderung };
+        return (
+          `<!doctype html><html lang="de"><head><title>Seite</title>${t.viewport}</head>` +
+          `<body>${t.skip}${t.header}${t.main}${t.footer}</body></html>`
+        );
+      };
+
+      /** Die neun Kennungen, die 0.8.0 mitgebracht hat. */
+      const NEU = [
+        "landmarks/main-missing",
+        "landmarks/main-duplicate",
+        "landmarks/navigation-missing",
+        "landmarks/banner-missing",
+        "landmarks/contentinfo-missing",
+        "keyboard/skip-link-missing",
+        "aria/required-attribute-missing",
+        "headings/h1-multiple",
+        "zoom/viewport-missing",
+      ];
+
+      const REGELN = [
+        {
+          titel: "vollständiges Dokument",
+          kennung: "— keine der neun —",
+          soll: null,
+          doc: dok(),
+          pruefe: (befunde) => NEU.every((k) => !(k in befunde)),
+          ist: (befunde) => Object.keys(befunde).filter((k) => NEU.includes(k)),
+        },
+        {
+          titel: "keine Viewport-Angabe",
+          kennung: "zoom/viewport-missing",
+          soll: "fail",
+          doc: dok({ viewport: "" }),
+        },
+        {
+          titel: "kein <main>",
+          kennung: "landmarks/main-missing",
+          soll: "fail",
+          doc: dok({ main: "<h1>Titel</h1><p>Text.</p>" }),
+        },
+        {
+          titel: "zwei <main>",
+          kennung: "landmarks/main-duplicate",
+          soll: "fail",
+          doc: dok({ main: `${TEILE.main}<main>noch eins</main>` }),
+        },
+        {
+          titel: "kein <nav>",
+          kennung: "landmarks/navigation-missing",
+          soll: "review",
+          doc: dok({ header: "<header>Kopfbereich</header>" }),
+        },
+        {
+          titel: "kein <header>",
+          kennung: "landmarks/banner-missing",
+          soll: "review",
+          doc: dok({ header: '<nav><a href="/">Start</a></nav>' }),
+        },
+        {
+          titel: "kein <footer>",
+          kennung: "landmarks/contentinfo-missing",
+          soll: "review",
+          doc: dok({ footer: "" }),
+        },
+        {
+          titel: "kein Sprunglink",
+          kennung: "keyboard/skip-link-missing",
+          soll: "review",
+          doc: dok({ skip: "" }),
+        },
+        {
+          titel: "zwei <h1>",
+          kennung: "headings/h1-multiple",
+          soll: "review",
+          doc: dok({ main: '<main id="inhalt"><h1>Eins</h1><h1>Zwei</h1></main>' }),
+        },
+        {
+          titel: 'role="checkbox" ohne aria-checked',
+          kennung: "aria/required-attribute-missing",
+          soll: "fail",
+          doc: dok({
+            main: '<main id="inhalt"><h1>T</h1><div role="checkbox">Newsletter</div></main>',
+          }),
+        },
+      ];
+
+      const GEGENPROBEN = [
+        {
+          titel: '<div role="main"> zählt als Landmark',
+          kennung: "landmarks/main-missing",
+          soll: null,
+          doc: dok({ main: '<div role="main"><h1>Titel</h1></div>' }),
+        },
+        {
+          titel: '<main role="presentation"> zählt nicht',
+          kennung: "landmarks/main-missing",
+          soll: "fail",
+          doc: dok({ main: '<main role="presentation"><h1>Titel</h1></main>' }),
+        },
+        {
+          titel: "<footer> im <article> gehört zum Artikel",
+          kennung: "landmarks/contentinfo-missing",
+          soll: "review",
+          doc: dok({
+            footer: "",
+            main: '<main id="inhalt"><h1>T</h1><article><footer>Autor</footer></article></main>',
+          }),
+        },
+        {
+          titel: "<div> dazwischen disqualifiziert nicht",
+          kennung: "landmarks/contentinfo-missing",
+          soll: null,
+          doc: dok({ footer: "<div><footer>Impressum</footer></div>" }),
+        },
+        {
+          titel: 'role="checkbox" mit aria-checked',
+          kennung: "aria/required-attribute-missing",
+          soll: null,
+          doc: dok({
+            main:
+              '<main id="inhalt"><h1>T</h1>' +
+              '<div role="checkbox" aria-checked="false">Newsletter</div></main>',
+          }),
+        },
+        {
+          titel: 'role="slider", nur aria-valuenow gesetzt',
+          kennung: "aria/required-attribute-missing",
+          soll: "fail",
+          doc: dok({
+            main:
+              '<main id="inhalt"><h1>T</h1>' +
+              '<div role="slider" aria-valuenow="3">Menge</div></main>',
+          }),
+        },
+        {
+          titel: "gewöhnlicher Anker ist kein Sprunglink",
+          kennung: "keyboard/skip-link-missing",
+          soll: "review",
+          doc: dok({ skip: '<a href="#kapitel-3">Kapitel 3</a>' }),
+        },
+      ];
+
+      /** Scannt ein Dokument im iframe und liefert Kennung → Outcome. */
+      async function scanne(html) {
+        const frame = document.createElement("iframe");
+        frame.srcdoc = html;
+        document.body.append(frame);
+        await new Promise((fertig) => {
+          frame.addEventListener("load", fertig, { once: true });
+        });
+        const wurzel = frame.contentDocument.documentElement;
+        const result = await LiveAudit.scan(wurzel);
+        frame.remove();
+
+        const befunde = {};
+        for (const f of result.documents[0].report.findings) {
+          befunde[f.rule_id] = f.outcome;
+        }
+        return befunde;
+      }
+
+      /** Die Falltitel enthalten Tagnamen — ohne Maskierung schluckt sie das Markup. */
+      const esc = (t) =>
+        String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      const zelle = (wert) => {
+        if (wert === null || wert === undefined) return '<span class="keiner">kein Befund</span>';
+        if (Array.isArray(wert)) {
+          return wert.length === 0
+            ? '<span class="keiner">kein Befund</span>'
+            : `<span class="bad">${esc(wert.join(", "))}</span>`;
+        }
+        return `<span class="${wert}">${wert.toUpperCase()}</span>`;
+      };
+
+      async function fuelle(faelle, selektor) {
+        const tbody = document.querySelector(`${selektor} tbody`);
+        const ergebnisse = [];
+        for (const fall of faelle) {
+          const befunde = await scanne(fall.doc);
+          const ist = fall.ist ? fall.ist(befunde) : (befunde[fall.kennung] ?? null);
+          const ok = fall.pruefe ? fall.pruefe(befunde) : ist === fall.soll;
+          ergebnisse.push({ titel: fall.titel, kennung: fall.kennung, soll: fall.soll, ist, ok });
+
+          const tr = document.createElement("tr");
+          tr.innerHTML =
+            `<td>${esc(fall.titel)}</td><td><code>${esc(fall.kennung)}</code></td>` +
+            `<td>${zelle(fall.soll)}</td><td>${zelle(ist)}</td>` +
+            `<td class="${ok ? "ok" : "bad"}">${ok ? "ok" : "FEHLER"}</td>`;
+          tbody.append(tr);
+        }
+        return ergebnisse;
+      }
+
+      const regeln = await fuelle(REGELN, "#regeln");
+      const gegenproben = await fuelle(GEGENPROBEN, "#gegenproben");
+      const alle = [...regeln, ...gegenproben];
+      const alleOk = alle.every((e) => e.ok);
+
+      globalThis.__ERGEBNIS__ = { regeln, gegenproben, alleOk };
+      document.querySelector("#stand").textContent = alleOk
+        ? `fertig — ${alle.length} Fälle, alle wie erwartet`
+        : `FEHLER in ${alle.filter((e) => !e.ok).length} von ${alle.length} Fällen`;
+      document.title = alleOk ? "alles ok" : "FEHLER";
+    </script>
+  </body>
+</html>

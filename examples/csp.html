@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'">
+  <title>LiveAudit — strikte CSP</title>
+</head>
+<body>
+  <h1>Strikte CSP ohne <code>wasm-unsafe-eval</code></h1>
+  <p>
+    Diese Seite setzt <code>script-src 'self'</code>. Chrome instanziiert damit
+    kein WebAssembly. LiveAudit soll das als CSP-Problem melden, nicht als
+    unverständlichen Fehler.
+  </p>
+  <pre id="out">läuft…</pre>
+  <script type="module" src="./csp.js"></script>
+</body>
+</html>

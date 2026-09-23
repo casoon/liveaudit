@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LiveAudit — Inspector-Layer</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { font: 16px/1.6 system-ui, sans-serif; margin: 0 auto; padding: 2rem 1rem 8rem; max-width: 46rem; }
+      pre { background: #f4f4f5; padding: 1rem; overflow: auto; font-size: 13px; }
+      .probe { border: 1px solid #d4d4d8; padding: 1rem; margin: 1rem 0; }
+      .toolbar { display: flex; gap: .5rem; flex-wrap: wrap; margin: 1rem 0; }
+      .toolbar button { min-height: 2.25rem; padding: .4rem .9rem; font: inherit; cursor: pointer; }
+      .filler { height: 140vh; background: repeating-linear-gradient(#fafafa 0 24px, #f4f4f5 24px 48px); }
+      #klickziel { min-height: 2.5rem; padding: .5rem 1rem; font: inherit; }
+    </style>
+
+    <!-- Das Script startet nichts von selbst. Der Layer erscheint erst bei show(). -->
+    <!-- Ohne Freischaltung inert; die Seite ruft unten enable(). -->
+  </head>
+  <body>
+    <h1>LiveAudit — Inspector-Layer</h1>
+    <p>
+      Diese Seite trägt absichtlich bekannte Fehler. <strong>LiveAudit prüft, es repariert
+      nicht</strong> — der Layer zeigt die Befunde an, verändert den geprüften Teilbaum aber
+      nicht.
+    </p>
+
+    <div class="toolbar">
+      <button type="button" id="zeigen">Inspector zeigen</button>
+      <button type="button" id="verbergen">Inspector verbergen</button>
+      <button type="button" id="messen">Abnahmekriterien messen</button>
+      <button type="button" id="selbsttest">Layer gegen sich selbst prüfen</button>
+      <button type="button" id="klickziel">Klickziel (zählt Klicks: <span id="klicks">0</span>)</button>
+    </div>
+
+    <div class="probe" id="probe">
+      <h3>Absichtliche Fehler</h3>
+
+      <!-- images/alt-missing -->
+      <img
+        src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+        width="120"
+        height="80"
+      />
+      <!-- images/alt-suspicious -->
+      <img
+        src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+        alt="bild.png"
+        width="32"
+        height="32"
+      />
+
+      <!-- forms/label-missing und forms/placeholder-as-label -->
+      <p><input type="text" id="doppelt" /></p>
+      <p><input type="email" placeholder="E-Mail-Adresse" /></p>
+
+      <!-- ids/duplicate -->
+      <span id="doppelt">Zweite Verwendung derselben id.</span>
+
+      <!-- links/name-missing und links/ambiguous-name -->
+      <p><a href="/ziel"></a> <a href="/anderes-ziel">hier</a></p>
+
+      <!-- buttons/name-missing und keyboard/positive-tabindex -->
+      <p><button type="button" tabindex="3"></button></p>
+
+      <!-- keyboard/hidden-focusable -->
+      <button type="button" style="display: none">Versteckt, aber fokussierbar</button>
+
+      <!-- aria/role-invalid und aria/reference-missing -->
+      <p role="knopf" aria-labelledby="gibt-es-nicht">Element mit erfundener Rolle.</p>
+
+      <!-- headings/skip-level und headings/empty -->
+      <h5>Überschrift, die eine Ebene überspringt</h5>
+      <h6></h6>
+
+      <!-- svg/name-missing -->
+      <svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="#a1a1aa" /></svg>
+
+      <!-- tables/header-missing -->
+      <table>
+        <tr><td>Montag</td><td>9 Uhr</td></tr>
+        <tr><td>Dienstag</td><td>11 Uhr</td></tr>
+      </table>
+
+      <!-- lists/invalid-structure -->
+      <ul><div>Kein li in einer Liste.</div></ul>
+
+      <!-- Cross-Origin-Frame: erzeugt einen UNTESTED-Geltungsbereich, kein Schweigen. -->
+      <iframe src="https://example.com/" title="Cross-Origin" width="240" height="80"></iframe>
+    </div>
+
+    <h2>Messung</h2>
+    <pre id="ausgabe">Noch nicht gemessen.</pre>
+
+    <!-- Genug Höhe, damit die Scrollhöhe überhaupt eine Aussage hat. -->
+    <div class="filler" aria-hidden="true"></div>
+
+    <script type="module">
+      import LiveAudit, { enable } from "../dist/inspector.js";
+
+      enable();
+
+      const ausgabe = document.getElementById("ausgabe");
+      const zeilen = [];
+      const schreibe = (zeile) => {
+        zeilen.push(zeile);
+        ausgabe.textContent = zeilen.join("\n");
+      };
+
+      let klicks = 0;
+      document.getElementById("klickziel").addEventListener("click", () => {
+        klicks += 1;
+        document.getElementById("klicks").textContent = String(klicks);
+      });
+
+      document.getElementById("zeigen").addEventListener("click", () => LiveAudit.show());
+      document.getElementById("verbergen").addEventListener("click", () => LiveAudit.hide());
+
+      /** Alles, woran sich eine Veränderung der Seite zeigen würde. */
+      const zustand = () => ({
+        bodyAttribute: [...document.body.attributes].map((a) => `${a.name}=${a.value}`).join("|"),
+        bodyKinder: document.body.childElementCount,
+        bodyKlassen: document.body.className,
+        scrollHoehe: document.documentElement.scrollHeight,
+        bodyScrollHoehe: document.body.scrollHeight,
+        rechtecke: [...document.querySelectorAll("#probe *")].map((el) => {
+          const r = el.getBoundingClientRect();
+          return `${r.x},${r.y},${r.width},${r.height}`;
+        }),
+        markup: document.getElementById("probe").outerHTML,
+      });
+
+      const vergleiche = (vorher, nachher) => {
+        const abweichungen = [];
+        for (const feld of ["bodyAttribute", "bodyKlassen", "scrollHoehe", "bodyScrollHoehe", "markup"]) {
+          if (vorher[feld] !== nachher[feld]) abweichungen.push(feld);
+        }
+        // Der Host ist ein zusätzliches Kind von <body> — das ist die eine
+        // erlaubte Veränderung und betrifft den geprüften Teilbaum nicht.
+        const kinderDelta = nachher.bodyKinder - vorher.bodyKinder;
+        let verschoben = 0;
+        for (let i = 0; i < vorher.rechtecke.length; i++) {
+          if (vorher.rechtecke[i] !== nachher.rechtecke[i]) verschoben += 1;
+        }
+        return { abweichungen, kinderDelta, verschoben, gemessen: vorher.rechtecke.length };
+      };
+
+      document.getElementById("messen").addEventListener("click", async () => {
+        zeilen.length = 0;
+        LiveAudit.hide();
+        const vorher = zustand();
+        const result = await LiveAudit.show();
+        const nachher = zustand();
+        const diff = vergleiche(vorher, nachher);
+
+        schreibe(`Befunde: ${result.documents.reduce((n, d) => n + d.report.findings.length, 0)}`);
+        schreibe("");
+        schreibe("— Abnahmekriterien —");
+        schreibe(`document.body verändert: ${diff.abweichungen.length === 0 ? "nein" : diff.abweichungen.join(", ")}`);
+        schreibe(`  Kinder von <body>: ${vorher.bodyKinder} → ${nachher.bodyKinder} (Δ ${diff.kinderDelta}, der Host)`);
+        schreibe(`  scrollHeight: ${vorher.scrollHoehe} → ${nachher.scrollHoehe}`);
+        schreibe(`  Markup des Prüfbereichs identisch: ${vorher.markup === nachher.markup ? "ja" : "NEIN"}`);
+        schreibe(`  getBoundingClientRect verschoben: ${diff.verschoben} von ${diff.gemessen} Elementen`);
+
+        // Ein Klick neben einen Marker muss die Seite erreichen. Gemessen wird
+        // mit elementFromPoint — das ist genau der Treffertest des Browsers,
+        // inklusive pointer-events.
+        const ziel = document.getElementById("klickziel");
+        const r = ziel.getBoundingClientRect();
+        const x = Math.round(r.left + r.width / 2);
+        const y = Math.round(r.top + r.height / 2);
+        const getroffen = document.elementFromPoint(x, y);
+        schreibe(`Klick auf das Klickziel trifft: <${getroffen?.localName ?? "nichts"}>` +
+          ` (erwartet: button) — ${getroffen === ziel ? "ok" : "FEHLER"}`);
+
+        const host = document.querySelector("liveaudit-inspector");
+        schreibe(`Hosts im Dokument: ${document.querySelectorAll("liveaudit-inspector").length}` +
+          ` — letztes Kind von <body>: ${host === document.body.lastElementChild ? "ja" : "nein"}`);
+        const stil = getComputedStyle(host);
+        schreibe(`Host: position=${stil.position}, pointer-events=${stil.pointerEvents}`);
+      });
+
+      // Der Layer ist selbst ein Barrierefreiheits-Werkzeug. Der Collector
+      // schließt den Host über den Tagnamen aus, deshalb wird hier die Wurzel
+      // im Shadow Root direkt als Scan-Wurzel übergeben.
+      document.getElementById("selbsttest").addEventListener("click", async () => {
+        zeilen.length = 0;
+        if (!LiveAudit.isVisible()) await LiveAudit.show();
+        const root = document.querySelector("liveaudit-inspector").shadowRoot.querySelector(".root");
+        const result = await LiveAudit.scan(root);
+        schreibe(`Selbsttest über ${result.documents[0].nodes} Knoten des Layers:`);
+        for (const f of result.documents[0].report.findings) {
+          schreibe(`  ${f.outcome.toUpperCase()} [${f.severity}] ${f.rule_id}: ${f.message}`);
+        }
+        if (result.documents[0].report.findings.length === 0) schreibe("  kein Befund");
+      });
+    </script>
+  </body>
+</html>
