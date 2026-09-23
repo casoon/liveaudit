@@ -89,5 +89,5 @@ export function writeDock(state: DockState): void {
 
 /** Die Beschriftung der Andockschaltflächen. */
 export function dockLabel(side: DockSide): string {
-  return { left: "Links", top: "Oben", bottom: "Unten", right: "Rechts" }[side];
+  return { left: "Left", top: "Top", bottom: "Bottom", right: "Right" }[side];
 }

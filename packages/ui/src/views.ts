@@ -44,7 +44,7 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 function badges(item: Item): HTMLElement[] {
   return [
     el("span", { class: `badge o-${item.finding.outcome}` }, [item.finding.outcome.toUpperCase()]),
-    el("span", { class: "badge-sev" }, [`Schweregrad ${severityLabel(item.finding.severity)}`]),
+    el("span", { class: "badge-sev" }, [`Severity ${severityLabel(item.finding.severity)}`]),
   ];
 }
 
@@ -88,11 +88,11 @@ function liveSchalter(state: PanelState, cb: PanelCallbacks): HTMLElement {
 
   return el("div", { class: "live" }, [
     box,
-    el("label", { for: "liveaudit-live" }, ["Live-Modus"]),
+    el("label", { for: "liveaudit-live" }, ["Live mode"]),
     el("span", { class: "live-note" }, [
       state.live.aktiv
-        ? "Läuft mit. Neu gescannt wird nur der geänderte Teilbaum; Aussagen über das Dokument bleiben vom letzten Vollscan."
-        : "Aus. Der Layer zeigt den Stand des letzten Scans.",
+        ? "Running. Only the changed subtree is rescanned; statements about the document still come from the last full scan."
+        : "Off. The layer shows the state of the last scan.",
     ]),
   ]);
 }
@@ -107,13 +107,13 @@ function liveSchalter(state: PanelState, cb: PanelCallbacks): HTMLElement {
 export function renderPanel(panel: HTMLElement, state: PanelState, cb: PanelCallbacks): void {
   panel.replaceChildren();
 
-  const close = el("button", { type: "button", class: "close" }, ["Schließen"]);
+  const close = el("button", { type: "button", class: "close" }, ["Close"]);
   close.addEventListener("click", cb.onClose);
 
   // Die Andockwahl steht in der Kopfleiste und nicht in einem Menü: vier
   // Schaltflächen sind billiger zu bedienen als ein aufklappbares Etwas, und
   // die gewählte Kante ist ohne Öffnen ablesbar.
-  const docks = el("div", { class: "docks", role: "group", "aria-label": "Andocken" });
+  const docks = el("div", { class: "docks", role: "group", "aria-label": "Dock" });
   for (const side of DOCK_SIDES) {
     const button = el(
       "button",
@@ -125,7 +125,7 @@ export function renderPanel(panel: HTMLElement, state: PanelState, cb: PanelCall
       },
       [el("i", { "aria-hidden": "true" })],
     );
-    button.setAttribute("aria-label", `${dockLabel(side)} andocken`);
+    button.setAttribute("aria-label", `Dock ${dockLabel(side).toLowerCase()}`);
     button.addEventListener("click", () => cb.onDock(side));
     docks.append(button);
   }
@@ -137,15 +137,15 @@ export function renderPanel(panel: HTMLElement, state: PanelState, cb: PanelCall
         el("div", { class: "head-actions" }, [docks, close]),
       ]),
       el("p", { class: "claim" }, [
-        "Inspector-Layer. ",
-        el("strong", {}, ["Prüft, repariert nicht."]),
+        "Inspector layer. ",
+        el("strong", {}, ["It inspects. It does not repair."]),
       ]),
       ...(state.live.verfuegbar ? [liveSchalter(state, cb)] : []),
       // Vier Zahlen nebeneinander, kein Prozentwert: UNTESTED steht
       // gleichrangig neben FAIL, nicht als Rest.
       el(
         "ul",
-        { class: "summary", "aria-label": "Befunde nach Zustand" },
+        { class: "summary", "aria-label": "Findings by state" },
         OUTCOME_ORDER.map((outcome) =>
           el("li", { class: `o-${outcome}` }, [
             el("span", { class: "count" }, [String(state.counts[outcome])]),
@@ -160,7 +160,7 @@ export function renderPanel(panel: HTMLElement, state: PanelState, cb: PanelCall
   const body = el("div", { class: "panel-body" });
   panel.append(body);
 
-  const filters = el("fieldset", { class: "filters" }, [el("legend", {}, ["Zustände anzeigen"])]);
+  const filters = el("fieldset", { class: "filters" }, [el("legend", {}, ["Show states"])]);
   for (const outcome of OUTCOME_ORDER) {
     const input = el("input", {
       type: "checkbox",
@@ -178,7 +178,7 @@ export function renderPanel(panel: HTMLElement, state: PanelState, cb: PanelCall
   body.append(filters);
 
   if (state.visible.length === 0) {
-    body.append(el("p", { class: "note" }, ["Kein Befund in den ausgewählten Zuständen."]));
+    body.append(el("p", { class: "note" }, ["No finding in the selected states."]));
   }
 
   for (const [category, items] of state.groups) {
@@ -196,7 +196,7 @@ export function renderPanel(panel: HTMLElement, state: PanelState, cb: PanelCall
         [
           el("span", { class: "meta" }, [
             el("span", { class: "num", "aria-hidden": "true" }, [String(item.number)]),
-            el("span", { class: "sr-only" }, [`Befund ${item.number}.`]),
+            el("span", { class: "sr-only" }, [`Finding ${item.number}.`]),
             ...badges(item),
             el("span", { class: "rule" }, [item.finding.rule_id]),
           ]),
@@ -206,7 +206,7 @@ export function renderPanel(panel: HTMLElement, state: PanelState, cb: PanelCall
       if (state.unplaced.has(item.key)) {
         entry.append(
           el("span", { class: "note" }, [
-            "Kein Marker: gilt für das Dokument oder das Element wird nicht dargestellt.",
+            "No marker: it applies to the document, or the element is not rendered.",
           ]),
         );
       }
@@ -226,16 +226,14 @@ export function renderPanel(panel: HTMLElement, state: PanelState, cb: PanelCall
   if (state.scopes.length > 0) {
     body.append(
       el("section", { class: "group", "aria-labelledby": "liveaudit-group-scopes" }, [
-        el("h3", { id: "liveaudit-group-scopes" }, [
-          `Nicht erreichbare Bereiche (${state.scopes.length})`,
-        ]),
+        el("h3", { id: "liveaudit-group-scopes" }, [`Unreachable scopes (${state.scopes.length})`]),
         el(
           "ul",
           {},
           state.scopes.map((scope) =>
             el("li", {}, [
               el("p", { class: "note" }, [
-                `${scope.reason}: ${scope.src ?? "(ohne src)"} — automatisiert nicht beurteilbar.`,
+                `${scope.reason}: ${scope.src ?? "(no src)"} — not decidable automatically.`,
               ]),
             ]),
           ),
@@ -247,7 +245,9 @@ export function renderPanel(panel: HTMLElement, state: PanelState, cb: PanelCall
   if (state.notRun.length > 0) {
     body.append(
       el("section", { class: "group", "aria-labelledby": "liveaudit-group-notrun" }, [
-        el("h3", { id: "liveaudit-group-notrun" }, [`Regeln ohne Lauf (${state.notRun.length})`]),
+        el("h3", { id: "liveaudit-group-notrun" }, [
+          `Rules that did not run (${state.notRun.length})`,
+        ]),
         el(
           "ul",
           {},
@@ -275,15 +275,15 @@ export type Visibility =
 function visibilityText(visibility: Visibility): string {
   switch (visibility.kind) {
     case "visible":
-      return "Am Ankerpunkt sichtbar.";
+      return "Visible at the anchor point.";
     case "covered":
-      return `Am Ankerpunkt verdeckt von ${visibility.by}.`;
+      return `Covered at the anchor point by ${visibility.by}.`;
     case "offscreen":
-      return "Außerhalb des Sichtbereichs.";
+      return "Outside the viewport.";
     case "not-rendered":
-      return "Nicht dargestellt — hat keine Fläche im Layout.";
+      return "Not rendered — it has no box in the layout.";
     default:
-      return "Sichtbarkeit nicht gemessen.";
+      return "Visibility not measured.";
   }
 }
 
@@ -302,13 +302,13 @@ export function renderPopover(
 ): void {
   popover.replaceChildren();
 
-  const close = el("button", { type: "button", class: "close" }, ["Schließen"]);
+  const close = el("button", { type: "button", class: "close" }, ["Close"]);
   close.addEventListener("click", cb.onClose);
 
   popover.append(
     el("div", { class: "head" }, [
       el("h2", { class: "pop-title", id: "liveaudit-popover-title" }, [
-        `Befund ${item.number}: ${item.finding.rule_id}`,
+        `Finding ${item.number}: ${item.finding.rule_id}`,
       ]),
       close,
     ]),
@@ -320,18 +320,15 @@ export function renderPopover(
   const addFact = (term: string, value: string): void => {
     facts.append(el("dt", {}, [term]), el("dd", {}, [value]));
   };
-  addFact(
-    "Zustand",
-    `${item.finding.outcome.toUpperCase()} — ${outcomeGloss(item.finding.outcome)}`,
-  );
-  addFact("Schweregrad", severityLabel(item.finding.severity));
+  addFact("State", `${item.finding.outcome.toUpperCase()} — ${outcomeGloss(item.finding.outcome)}`);
+  addFact("Severity", severityLabel(item.finding.severity));
   if (item.finding.wcag !== undefined && item.finding.wcag.length > 0) {
     const level =
       item.finding.wcag_level === undefined ? "" : ` (Level ${item.finding.wcag_level})`;
     addFact("WCAG", `${item.finding.wcag.join(", ")}${level}`);
   }
-  if (item.documentId !== 0) addFact("Dokument", `Same-Origin-Frame #${item.documentId}`);
-  addFact("Lage", visibilityText(visibility));
+  if (item.documentId !== 0) addFact("Document", `Same-origin frame #${item.documentId}`);
+  addFact("Position", visibilityText(visibility));
   popover.append(facts);
 
   if (item.finding.help !== undefined) {
@@ -341,12 +338,12 @@ export function renderPopover(
     popover.append(el("pre", { class: "snippet" }, [item.finding.snippet]));
   }
   if (item.finding.suggestion !== undefined) {
-    popover.append(el("p", { class: "note" }, [`Vorschlag: ${item.finding.suggestion}`]));
+    popover.append(el("p", { class: "note" }, [`Suggestion: ${item.finding.suggestion}`]));
   }
 
-  const reveal = el("button", { type: "button", class: "action" }, ["Element zeigen"]);
+  const reveal = el("button", { type: "button", class: "action" }, ["Reveal element"]);
   reveal.addEventListener("click", cb.onReveal);
-  const details = el("button", { type: "button", class: "action" }, ["Details in der Liste"]);
+  const details = el("button", { type: "button", class: "action" }, ["Details in the list"]);
   details.addEventListener("click", cb.onDetails);
   popover.append(el("div", { class: "actions" }, [reveal, details]));
 }

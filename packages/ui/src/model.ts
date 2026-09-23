@@ -52,42 +52,42 @@ export const DEFAULT_OUTCOMES: readonly Outcome[] = ["fail", "review", "untested
 export const OUTCOME_ORDER: readonly Outcome[] = ["fail", "review", "untested", "pass"];
 
 const OUTCOME_GLOSS: Record<Outcome, string> = {
-  fail: "automatisch festgestellt",
-  review: "manuell prüfen",
-  untested: "automatisiert nicht beurteilbar",
-  pass: "automatische Prüfung bestanden",
+  fail: "detected automatically",
+  review: "needs a human decision",
+  untested: "not decidable automatically",
+  pass: "passed the automatic check",
 };
 
 const SEVERITY_LABEL: Record<Severity, string> = {
-  low: "niedrig",
-  medium: "mittel",
-  high: "hoch",
-  critical: "kritisch",
+  low: "low",
+  medium: "medium",
+  high: "high",
+  critical: "critical",
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
   aria: "ARIA",
-  buttons: "Schaltflächen",
-  contrast: "Kontrast",
-  document: "Dokument",
-  forms: "Formulare",
-  headings: "Überschriften",
+  buttons: "Buttons",
+  contrast: "Contrast",
+  document: "Document",
+  forms: "Forms",
+  headings: "Headings",
   ids: "IDs",
-  images: "Bilder",
-  keyboard: "Tastatur",
+  images: "Images",
+  keyboard: "Keyboard",
   landmarks: "Landmarks",
   links: "Links",
-  lists: "Listen",
+  lists: "Lists",
   svg: "SVG",
-  tables: "Tabellen",
+  tables: "Tables",
   zoom: "Zoom",
 };
 
 const NOT_RUN_LABEL: Record<string, string> = {
-  capability_missing: "Fähigkeit fehlt (Tier nicht bedient)",
-  disabled: "abgeschaltet",
-  not_applicable: "nicht anwendbar",
-  errored: "mit Fehler abgebrochen",
+  capability_missing: "capability missing (tier not served)",
+  disabled: "disabled",
+  not_applicable: "not applicable",
+  errored: "aborted with an error",
 };
 
 /** Die erklärende Beschriftung zu einem Zustand. Der Code selbst bleibt sichtbar. */

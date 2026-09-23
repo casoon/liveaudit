@@ -249,7 +249,7 @@ class InspectorLayer {
         class: "grip",
         role: "separator",
         tabindex: "0",
-        "aria-label": "Größe der Seitenleiste",
+        "aria-label": "Sidebar size",
         "aria-valuemin": "240",
       });
       this.wireGrip(this.grip);
@@ -345,7 +345,7 @@ class InspectorLayer {
         class: `marker ${outcome}`,
         "aria-expanded": "false",
         "aria-controls": "liveaudit-popover",
-        "aria-label": `Befund ${item.number}: ${item.finding.outcome.toUpperCase()}, ${item.finding.rule_id}`,
+        "aria-label": `Finding ${item.number}: ${item.finding.outcome.toUpperCase()}, ${item.finding.rule_id}`,
       });
       marker.textContent = String(item.number);
       marker.addEventListener("click", () => this.togglePopover(item.key));
@@ -397,7 +397,7 @@ class InspectorLayer {
 
     const shown = visible.length;
     if (this.toggle !== null) {
-      this.toggle.textContent = `LiveAudit — ${shown} ${shown === 1 ? "Befund" : "Befunde"}`;
+      this.toggle.textContent = `LiveAudit — ${shown} ${shown === 1 ? "finding" : "findings"}`;
     }
 
     this.setPanelOpen(this.dock.open, false);

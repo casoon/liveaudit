@@ -59,9 +59,9 @@ let zuletzt: { root?: Element; options?: WatchOptions } = {};
 
 /** Die Direktive, ohne die Chrome kein WebAssembly instanziiert. */
 const CSP_HINWEIS =
-  "LiveAudit konnte das WASM-Modul nicht instanziieren. Die Content Security " +
-  "Policy dieser Seite erlaubt kein WebAssembly — ergänze `wasm-unsafe-eval` " +
-  "in der `script-src`-Direktive.";
+  "LiveAudit could not instantiate the WebAssembly module. This page's Content " +
+  "Security Policy does not allow WebAssembly — add `wasm-unsafe-eval` to the " +
+  "`script-src` directive.";
 
 /**
  * Erkennt, ob ein Fehlschlag von der Content Security Policy kommt.

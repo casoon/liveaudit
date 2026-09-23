@@ -3,7 +3,8 @@
 Der Inspector-Layer — **Schritt 4** in [docs/build-plan.md](../../docs/build-plan.md).
 
 **Inspector-Layer, nicht „Overlay": LiveAudit prüft, es repariert nicht.** Der
-Satz steht sichtbar in der Seitenleiste, nicht nur hier.
+Satz steht sichtbar in der Seitenleiste — dort auf Englisch, wie alle sichtbaren
+Texte: „It inspects. It does not repair."
 
 ## Drei Darstellungsvarianten
 

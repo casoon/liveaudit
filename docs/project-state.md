@@ -438,12 +438,8 @@ Links. Die Demo selbst findet **18 Befunde über 190 Knoten**, mit
 Kontrastdurchgang **27**; darunter `contrast/text-insufficient` bei 2,85:1 und
 `contrast/text-undetermined` auf dem Verlauf, also ein sichtbares `UNTESTED`.
 
-Zwei Befunde aus dem Bau:
+Ein Befund aus dem Bau:
 
-- **Die Oberfläche des Layers ist deutsch, die Seite englisch.** In der Demo
-  steht „Befunde", „Schließen", „Schweregrad" mitten in einer englischen Seite.
-  Das ist eine offene Entscheidung, keine Kleinigkeit: Repository und Code sind
-  deutsch, README und Projektseite englisch.
 - **Das Theme selbst erzeugt `contrast/text-undetermined`.** Kopfleiste und
   einige Textflächen arbeiten mit halbdurchsichtigem Hintergrund; dort lässt sich
   die Fläche hinter dem Text nicht auf eine Farbe zurückführen. Die Antwort ist

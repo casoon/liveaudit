@@ -304,6 +304,22 @@ Shadow DOM gibt es keine Verschränkung wie das Slotting.
   identischer Kennungen über alle drei Oberflächen. Soll daraus eine Regel
   werden (etwa `frames/cross-origin`), gehört sie nach `a11y-rules`.
 
+## Sichtbare Texte sind englisch, der Code bleibt deutsch
+
+Entschieden: Alles, was der Inspector-Layer anzeigt — Beschriftungen,
+`aria-label`, Popover-Texte, Fehlermeldungen der öffentlichen API — steht auf
+Englisch. Kommentare, Commit-Nachrichten, `docs/` und Testnamen bleiben deutsch.
+
+*Grund:* Der Layer liegt auf einer fremden Seite, deren Sprache niemand kennt.
+Englisch ist die Sprache, in der die Rule-IDs, `a11y-rules`, die README und die
+Projektseite ohnehin schon sprechen; deutsche Beschriftungen mitten in einem
+englischen Dokument waren ein sichtbarer Bruch. Eine Übersetzungsschicht gibt es
+nicht — sie kostete Bundle und Pflege für ein Werkzeug, das Prüfende bedienen,
+nicht Endnutzer.
+
+*Konsequenz:* Neue UI-Texte werden englisch geschrieben. Browsertests, die
+Beschriftungen prüfen, halten sich an dieselben Zeichenketten.
+
 ## Der eigene Host bleibt aus dem Scan
 
 Entschieden: Der Collector überspringt jedes Element mit dem Tagnamen

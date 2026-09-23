@@ -23,12 +23,12 @@ test("ohne Kontrastdurchgang nennt die Seitenleiste die beiden Regeln", async ({
     await window.LiveAudit.show();
   });
 
-  await expect(page.locator(`${GRUPPE} h3`)).toHaveText("Regeln ohne Lauf (2)");
+  await expect(page.locator(`${GRUPPE} h3`)).toHaveText("Rules that did not run (2)");
   const eintraege = await page.locator(`${GRUPPE} li`).allInnerTexts();
   expect(eintraege.join(" ")).toContain("contrast/text-insufficient");
   expect(eintraege.join(" ")).toContain("contrast/text-undetermined");
   // Der Grund steht dabei, nicht nur die Kennung.
-  expect(eintraege.join(" ")).toContain("Fähigkeit fehlt");
+  expect(eintraege.join(" ")).toContain("capability missing");
 });
 
 test("mit Kontrastdurchgang verschwindet die Gruppe", async ({ page }) => {

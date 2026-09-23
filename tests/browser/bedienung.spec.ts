@@ -57,7 +57,7 @@ test("die Seitenleiste lässt sich schließen und wieder öffnen", async ({ page
 });
 
 test("die Seitenleiste dockt an eine andere Kante", async ({ page }) => {
-  await page.locator(`${HOST} .dock-btn[aria-label="Links andocken"]`).click();
+  await page.locator(`${HOST} .dock-btn[aria-label="Dock left"]`).click();
 
   await expect(page.locator(`${HOST} .root`)).toHaveAttribute("data-dock", "left");
 });

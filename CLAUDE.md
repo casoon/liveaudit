@@ -46,6 +46,8 @@ Nie zu einem Prozentwert verrechnen.
   gegen das Bundle-Budget
 - **Node ≥ 22**, pnpm-Workspace
 - **Biome** für Lint und Format (kein ESLint, kein Prettier)
+- **Sichtbare UI-Texte englisch**, Code, Kommentare und `docs/` deutsch —
+  siehe [docs/decisions.md](docs/decisions.md)
 
 ## Was gemessen ist und nicht neu diskutiert werden muss
 
