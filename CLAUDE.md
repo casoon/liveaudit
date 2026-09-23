@@ -40,7 +40,9 @@ Nie zu einem Prozentwert verrechnen.
 
 ## Stack
 
-- **Rust → WASM** über `wasm-pack --target web`, für `packages/core`
+- **Kein Rust in diesem Repository.** Die WASM-Schicht kommt als
+  `@casoon/a11y-wasm` aus [barrierlab](https://github.com/casoon/barrierlab);
+  Änderungen daran gehören dorthin, nicht hierher
 - **TypeScript** für Collector und UI, **kein Framework zur Laufzeit** —
   das UI ist eigenes DOM im Shadow Root, eine Framework-Runtime im Bundle wäre
   gegen das Bundle-Budget

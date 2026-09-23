@@ -23,11 +23,15 @@ es noch nicht; wer es einbinden will, baut die beiden Dateien selbst.
 
 **LiveAudit ist lauffähig und auslieferbar.** Alle fünf Schritte aus
 [build-plan.md](build-plan.md) sind gebaut: `pnpm build` erzeugt
-`dist/inspector.js` und `dist/inspector_bg.wasm`, `LiveAudit.scan()` liefert
+`dist/inspector.js` und `dist/a11y_wasm_bg.wasm`, `LiveAudit.scan()` liefert
 `Finding[]` mit den Rule-IDs aus `a11y-rules`, `LiveAudit.show()` legt den
 Inspector-Layer über die Seite — Rahmen, Marker mit Popover und eine
 Seitenleiste —, und ohne ausdrückliche Freischaltung ist das Script inert.
 `examples/inspector.html` zeigt den Layer, `examples/csp.html` den CSP-Pfad.
+
+**Die sichtbaren Texte sind englisch** — die des Layers ebenso wie die
+Befundtexte aus `a11y-rules` seit 0.11.0. Code, Kommentare und diese Doku bleiben
+deutsch; die Regel steht in [decisions.md](decisions.md).
 
 Die Beispielseiten rufen **`enable()`** und umgehen das Flag damit bewusst —
 sie sind der programmgesteuerte Fall aus [decisions.md](decisions.md). Ein
@@ -38,10 +42,10 @@ wer sich darauf verlässt, bekommt einen `ReferenceError` statt einer Erklärung
 |---|---|
 | Konzept und Architekturentscheidungen | fertig, siehe [decisions.md](decisions.md) |
 | Performance-Messung | fertig, siehe [../spike/ERGEBNIS.md](../spike/ERGEBNIS.md) |
-| Gemeinsamer Kern `a11y-core` | **veröffentlicht**, vier Crates auf crates.io |
+| Gemeinsamer Kern `a11y-core` | **veröffentlicht**, vier Crates auf crates.io, 0.11.0 mit englischen Befundtexten |
 | Schritt 1 — Monorepo-Grundgerüst | **fertig** |
 | Schritt 2 — `packages/browser` (DOM Collector) | **fertig** |
-| Schritt 3 — `packages/core` (Rule Engine angebunden) | **fertig** |
+| Schritt 3 — WASM-Schicht (Rule Engine angebunden) | **fertig**, seit 23.09.2026 als `@casoon/a11y-wasm` ausgelagert |
 | Schritt 4 — `packages/ui` (Inspector-Layer) | **fertig** |
 | Schritt 5 — Auslieferungsmodell | **fertig** |
 | Veröffentlichung | **fertig** — öffentliches Repository, Projektseite live |
@@ -50,18 +54,22 @@ wer sich darauf verlässt, bekommt einen `ReferenceError` statt einer Erklärung
 
 ```
 packages/
-├── core/       Rust → WASM: Arena-Adapter über a11y-dom, Tier 2 über accname
 ├── browser/    TypeScript: DOM Collector, Scan-Treiber, Element-Identität
 ├── ui/         TypeScript + CSS: Inspector-Layer im Shadow Root
 └── liveaudit/  Einstiegspaket: globale API, Bundler-Einstieg
 ```
+
+Die WASM-Schicht liegt nicht mehr hier: `@casoon/a11y-wasm` bringt Arena-Adapter
+und Regel-Engine als fertiges Artefakt mit, dieses Repository baut kein Rust.
 
 Die Abhängigkeiten laufen in eine Richtung: `liveaudit → ui → browser → core`.
 Das Einstiegspaket ist bewusst getrennt — läge die öffentliche API in
 `browser`, entstünde ein Zyklus, weil sie `show()`/`hide()` aus `ui` braucht,
 während `ui` seinerseits auf `browser` aufbaut.
 
-- **`packages/core`** enthält **keine eigenen Regeln**. Es implementiert
+- **`@casoon/a11y-wasm`** (externes Paket, Quelle in
+  [barrierlab](https://github.com/casoon/barrierlab)) enthält **keine eigenen
+  Regeln**. Es implementiert
   `a11y_dom::Document`/`Node` über der spaltenweisen Arena und
   `a11y_dom::Semantics` über `accname`. Einstieg ist
   `a11y_rules::run_with_semantics`; der `accname::IdIndex` entsteht **einmal je
@@ -228,7 +236,7 @@ Drei Befunde:
   Collector. Getrennt, weil er nach der Messung oben das 1,9- bis 4,6-fache
   kostet und nicht zu jedem Scan gehört. Er löst den **effektiven** Hintergrund
   über die Vorfahren auf, mit der Merkliste, ohne die Tier 3 nicht tragbar wäre.
-- **`packages/core/src/rendering.rs`** — `RenderArena` erfüllt `Document`,
+- **`rendering.rs` in `@casoon/a11y-wasm`** — `RenderArena` erfüllt `Document`,
   `Semantics` und `Rendering` und ruft `a11y_rules::run_full`. Das Modul rechnet
   nichts aus; es reicht durch, was der Collector gesammelt hat.
 - **`LiveAudit.scan(root, { rendering: true })`** schaltet ihn ein. Ohne ihn
@@ -261,7 +269,7 @@ Collector. Sie kommt mit der ersten Regel, die sie braucht — Zielgrößen.
 
 ## Bundle-Größe
 
-`dist/inspector.js` 46,1 KB roh / **16,1 KB gzip**, `dist/inspector_bg.wasm`
+`dist/inspector.js` 46,1 KB roh / **16,1 KB gzip**, `dist/a11y_wasm_bg.wasm`
 166,7 KB roh / **80,1 KB gzip**. Gesamt 96,2 KB gzip (23.09.2026, a11y-core
 0.11.0, mit Live-Modus und englischen Texten). Das JavaScript liegt damit bei
 **81 % seiner Grenze von 20 KB**.
@@ -302,15 +310,17 @@ nur über Linktext und Klassennamen erraten.
 
 ## Stack
 
-- **Rust → WASM** über `wasm-pack --target web` für `packages/core`
+- **Kein Rust hier**: die WASM-Schicht kommt als `@casoon/a11y-wasm`
 - **TypeScript** für Collector und UI, kein Framework zur Laufzeit
-- **esbuild** bündelt zu `dist/inspector.js`; das WASM lädt sich über
+- **esbuild** bündelt zu `dist/inspector.js`, daneben liegt
+  `dist/a11y_wasm_bg.wasm` aus dem Paket; das WASM lädt sich über
   `new URL(..., import.meta.url)` selbst nach
 - **Node ≥ 22**, pnpm-Workspace, **Biome** für Lint und Format
 - Ein `tsconfig.json` an der Wurzel prüft alle Pakete; TypeScript-Projekt-
   referenzen gibt es bewusst nicht
-- Tests: `cargo test` für den Adapter, `node --test` mit **jsdom** für Collector
-  und Scan, **Playwright** für den Inspector-Layer — siehe unten.
+- Tests: `node --test` mit **jsdom** für Collector
+  und Scan, **Playwright** für den Inspector-Layer — siehe unten. Der
+  Arena-Adapter wird in `@casoon/a11y-wasm` getestet, nicht hier.
 
 ## Live-Modus
 
@@ -421,8 +431,8 @@ Zwei Abweichungen von den übrigen Projektseiten, beide aus dem Gegenstand:
 in zwei Schritten: `pnpm build` an der Wurzel erzeugt `dist/`,
 `pnpm --filter liveaudit-site build` kopiert das Ergebnis über
 `scripts/site-demo.js` nach `site/public/demo/` und baut die Seite.
-`.github/workflows/pages.yml` macht beides — ohne den Rust-Schritt stünde auf der
-Demo-Seite eine Schaltfläche, die nichts findet. Die Pages-Quelle ist „GitHub
+`.github/workflows/pages.yml` macht beides; seit die WASM-Schicht als Paket
+kommt, braucht er keine Rust-Werkzeuge mehr. Die Pages-Quelle ist „GitHub
 Actions"; der Workflow läuft bei jedem Push auf `main` und veröffentlicht
 `site/dist`. Die kopierten Artefakte sind
 ignoriert; committet ist nur `site/public/demo/start.js`.

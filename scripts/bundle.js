@@ -1,15 +1,16 @@
 /**
  * Bündelt `@liveaudit/browser` zu `dist/inspector.js` und legt
- * `dist/inspector_bg.wasm` daneben.
+ * `dist/a11y_wasm_bg.wasm` daneben.
  *
- * Der Glue-Code von wasm-pack löst das Modul über
- * `new URL("inspector_bg.wasm", import.meta.url)` auf. esbuild lässt dieses
+ * Der Glue-Code von wasm-bindgen löst das Modul über
+ * `new URL("a11y_wasm_bg.wasm", import.meta.url)` auf. esbuild lässt dieses
  * Muster unangetastet, sodass es nach dem Bündeln auf die Datei neben
  * `dist/inspector.js` zeigt — der Anwender bindet nur `inspector.js` ein.
  */
 
 import { readFileSync } from "node:fs";
 import { copyFile, mkdir, stat } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
@@ -18,12 +19,20 @@ import { build } from "esbuild";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const dist = join(root, "dist");
-const wasm = join(root, "packages", "core", "pkg", "inspector_bg.wasm");
+// Das WASM-Artefakt kommt als Abhängigkeit aus @casoon/a11y-wasm; dieses
+// Repository baut kein Rust mehr. Aufgelöst über den Export des Pakets, nicht
+// über einen Pfad in node_modules — unter pnpm liegt es nicht im Wurzelbaum,
+// sondern beim Paket, das es deklariert.
+const wasm = createRequire(join(root, "packages", "browser", "package.json")).resolve(
+  "@casoon/a11y-wasm/a11y_wasm_bg.wasm",
+);
 
 try {
   await stat(wasm);
 } catch {
-  console.error("packages/core/pkg/inspector_bg.wasm fehlt — zuerst `pnpm build:wasm`.");
+  console.error(
+    "node_modules/@casoon/a11y-wasm/pkg/a11y_wasm_bg.wasm fehlt — zuerst `pnpm install`.",
+  );
   process.exit(1);
 }
 
@@ -41,7 +50,9 @@ await build({
   legalComments: "none",
 });
 
-await copyFile(wasm, join(dist, "inspector_bg.wasm"));
+// Der Glue löst das Modul über `new URL("a11y_wasm_bg.wasm", import.meta.url)`
+// auf, deshalb muss die Datei neben inspector.js genau so heißen.
+await copyFile(wasm, join(dist, "a11y_wasm_bg.wasm"));
 
 /**
  * Bundle-Budget in KB gzip. Mit Absicht knapp über dem heutigen Stand: Ein
@@ -51,7 +62,7 @@ await copyFile(wasm, join(dist, "inspector_bg.wasm"));
  */
 const BUDGET_KB_GZIP = {
   "inspector.js": 20,
-  "inspector_bg.wasm": 100,
+  "a11y_wasm_bg.wasm": 100,
 };
 
 let ueberschritten = false;

@@ -14,6 +14,6 @@
     "test": "node --test --experimental-strip-types test/*.test.ts"
   },
   "dependencies": {
-    "@liveaudit/core": "workspace:*"
+    "@casoon/a11y-wasm": "^0.1.1"
   }
 }

@@ -8,7 +8,7 @@
  * kein Schweigen.
  */
 
-import { Scan } from "@liveaudit/core";
+import { Scan } from "@casoon/a11y-wasm";
 
 import { collect, type FrameRef } from "./collect.ts";
 import { collectRendering } from "./rendering.ts";

@@ -14,7 +14,7 @@ flowchart TB
   Site["Beliebige Webseite\n(WordPress · Astro · React · Vue · PHP · HTML)"]
   Entry["packages/liveaudit (TypeScript)\nFreischaltung · öffentliche API"]
   Adapter["packages/browser (TypeScript)\nDOM · Shadow DOM · Frames\nTier-3-Stile · MutationObserver"]
-  Core["packages/core (Rust → WASM)\na11y-dom · a11y-rules · accname · a11y-report"]
+  Core["@casoon/a11y-wasm (Rust → WASM, externes Paket)\na11y-dom · a11y-rules · accname · a11y-report"]
   UI["packages/ui (TypeScript + CSS)\nInspector-Layer · Rahmen · Marker · Seitenleiste"]
 
   Site -->|"<script src=inspector.js>"| Entry
@@ -43,12 +43,16 @@ Die Abhängigkeiten laufen in eine Richtung: `liveaudit → ui → browser → c
 Läge die öffentliche API in `browser`, entstünde ein Zyklus — sie braucht
 `show()`/`hide()` aus `ui`, während `ui` auf `browser` aufbaut.
 
-Build-Output: `dist/inspector.js`, `dist/inspector_bg.wasm`. Der Anwender bindet
+Build-Output: `dist/inspector.js`, `dist/a11y_wasm_bg.wasm`. Der Anwender bindet
 nur `inspector.js` ein, das WASM lädt sich selbst nach.
 
-`packages/core` enthält **keinen eigenen Regelbestand**. Es bindet die Crates aus
-[a11y-core](https://github.com/casoon/a11y-core) ein und stellt nur den
-Arena-Adapter und die wasm-bindgen-Grenze:
+Die WASM-Schicht liegt **nicht mehr in diesem Repository**. Sie ist als
+[`@casoon/a11y-wasm`](https://www.npmjs.com/package/@casoon/a11y-wasm)
+herausgezogen und wohnt im Monorepo
+[barrierlab](https://github.com/casoon/barrierlab), zusammen mit den Crates, die
+sie einbindet. Dieses Repository baut kein Rust mehr; es nimmt das fertige
+Artefakt als Abhängigkeit. Das Paket enthält **keinen eigenen Regelbestand**,
+sondern nur den Arena-Adapter und die wasm-bindgen-Grenze über:
 
 | Crate | Rolle | crates.io |
 |---|---|---|
@@ -130,7 +134,7 @@ Die Analyse läuft deshalb gestaffelt, und jede Stufe hat ihren eigenen Ort:
 ## Rule Engine
 
 Die Regeln kommen aus `a11y-rules` und sind freie generische Funktionen, pro Tier
-registriert. `packages/core` wählt die Einstiegsfunktion nach dem, was der
+registriert. `@casoon/a11y-wasm` wählt die Einstiegsfunktion nach dem, was der
 Collector liefert:
 
 ```rust

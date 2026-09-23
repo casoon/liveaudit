@@ -44,7 +44,7 @@ size.
 | Concept and architecture decisions | done — [docs/decisions.md](docs/decisions.md) |
 | Performance measurement | done — [spike/ERGEBNIS.md](spike/ERGEBNIS.md) |
 | Shared core `a11y-core` | **published**, four crates on crates.io |
-| `packages/core` — WASM shell | **done** — arena adapter, tier 2 via `accname` |
+| WASM shell | **done**, extracted to [`@casoon/a11y-wasm`](https://www.npmjs.com/package/@casoon/a11y-wasm) in [barrierlab](https://github.com/casoon/barrierlab) |
 | `packages/browser` — DOM collector | **done** — shadow DOM, frames, identity maps |
 | `packages/ui` — inspector layer | **done** — frames, markers, dockable sidebar |
 | `packages/liveaudit` — public API | **done** — `init`/`scan`/`show`/`dock`/`hide` |

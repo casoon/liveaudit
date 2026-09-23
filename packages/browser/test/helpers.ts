@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { initSync } from "@liveaudit/core";
+import { initSync } from "@casoon/a11y-wasm";
 import { JSDOM } from "jsdom";
 
 const require = createRequire(import.meta.url);
@@ -15,7 +15,7 @@ let initialized = false;
  */
 export function initWasm(): void {
   if (initialized) return;
-  initSync({ module: readFileSync(require.resolve("@liveaudit/core/inspector_bg.wasm")) });
+  initSync({ module: readFileSync(require.resolve("@casoon/a11y-wasm/a11y_wasm_bg.wasm")) });
   initialized = true;
 }
 

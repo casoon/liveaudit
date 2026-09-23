@@ -20,16 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Die Demo-Seite lädt das gebaute Bundle. Ohne diesen Schritt stünde dort
-      # eine Schaltfläche, die nichts findet.
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-      - uses: Swatinem/rust-cache@v2
-      - uses: jetli/wasm-pack-action@v0.4.0
-        with:
-          version: latest
-
       # Ohne version: Die Action nimmt packageManager aus der package.json.
       # Beides gesetzt bricht sie mit "Multiple versions of pnpm specified" ab.
       - uses: pnpm/action-setup@v6

@@ -14,9 +14,9 @@
  * ersten `init()`, der Inspector-Layer erscheint erst bei `show()`.
  */
 
+import initCore from "@casoon/a11y-wasm";
 import { type LiveHandle, type LiveOptions, watch as watchLive } from "@liveaudit/browser/live";
 import { type ScanOptions, type ScanResult, scan } from "@liveaudit/browser/scan";
-import initCore from "@liveaudit/core";
 import {
   configureLive,
   type DockSide,
