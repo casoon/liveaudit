@@ -46,11 +46,16 @@ Technisch prüfbar, inhaltlich nicht zuverlässig automatisch beurteilbar:
 
 ## Performance
 
-- Kein pauschaler `getComputedStyle()`- oder Bounding-Box-Aufruf für jeden
-  DOM-Node — bei großen Seiten (WordPress u. ä.) sind 20.000–100.000 Nodes
-  realistisch. Analyse läuft stattdessen phasenweise (siehe architecture.md).
-- MutationObserver-getriebene Re-Scans im Live-Modus müssen debounced werden
-  (200 ms), um bei DOM-Änderungsketten keinen Scan-Sturm auszulösen.
+- **Tier 3 ist ein eigener Durchgang, kein Standard.** `getComputedStyle()`
+  kostet pro Aufruf, nicht pro Layout; der Durchgang kostet gemessen das 1,9- bis
+  4,6-fache des Collectors und läuft nur auf Anforderung
+  (`scan(root, { rendering: true })`). Ohne ihn melden die betroffenen Regeln
+  `UNTESTED`, nicht `PASS`.
+- **`getBoundingClientRect()` je Knoten wird nicht erhoben.** Geometrie kostet
+  noch einmal so viel wie der ganze Collector und kommt erst mit der ersten
+  Regel, die sie braucht.
+- **Re-Scans im Live-Modus sind debounced (200 ms)** und erfassen nur den
+  geänderten Teilbaum. Bei 79 ms je Vollscan wäre ein Scan-Sturm sofort spürbar.
 
 ## Keine Mutation innerhalb des geprüften Teilbaums
 
@@ -59,9 +64,10 @@ Scan und Visualisierung dürfen den geprüften Teilbaum nicht verändern: kein
 Zielelement.
 
 Der Inspector-Layer selbst ist davon ausgenommen — er hängt als eigener Host im
-Dokument, ist aber `position: fixed` + `pointer-events: none`, vom Collector
-ausgeschlossen und bei `elementFromPoint()`-Messungen ausgeblendet. Siehe
-[decisions.md](decisions.md).
+Dokument, ist aber `position: fixed` + `pointer-events: none` und vom Collector
+ausgeschlossen. Bei Messungen am Punkt blendet er sich **nicht** aus, sondern
+filtert seinen Host aus `elementsFromPoint()`: derselbe Effekt, aber ein Layout
+statt zwei und kein Flackern. Siehe [decisions.md](decisions.md).
 
 ## Was die In-Page-Lage zusätzlich verschließt
 
@@ -76,6 +82,10 @@ Aufwand zu beheben — sie folgen daraus, dass der Prüfer *in* der Seite sitzt.
   `UNTESTED`-Geltungsbereich. Ein Same-Origin-Frame, dessen Navigation noch
   läuft, ist davon nicht zu unterscheiden und landet in derselben Kategorie —
   `contentDocument` zeigt in beiden Fällen ein `about:blank`.
+- **Ohne `wasm-unsafe-eval` in der CSP startet das Tool nicht.** Die
+  WASM-Instanziierung braucht die Direktive; fehlt sie, wirft `init()` einen
+  Fehler, der sie benennt, mit dem ursprünglichen Fehlschlag als `cause`. Das ist
+  keine Eigenheit von LiveAudit, sondern gilt für jedes WASM in der Seite.
 - **Der ID-Raum über Shadow-Grenzen wird verschmolzen.** Der Collector legt den
   flachen Baum in *eine* Arena; die getrennten ID-Räume der Shadow Roots gehen
   dabei verloren. `ids/duplicate` kann dadurch über legitim gleichnamige IDs in
