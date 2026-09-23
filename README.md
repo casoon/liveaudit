@@ -52,16 +52,18 @@ size.
 | Tier 3 — contrast | **done** — opt-in pass, see above |
 | Live mode — rescan on mutation | **done** — changed subtree only |
 | Tier 4 — focus order, target size, reflow | open |
+| npm package | open — build it from this repository for now |
 
-All five steps of [docs/build-plan.md](docs/build-plan.md) are done; the current
-state is in [docs/project-state.md](docs/project-state.md).
+The first five build steps are done; what is still open, with acceptance
+criteria, is in [docs/build-plan.md](docs/build-plan.md), and the current state
+in [docs/project-state.md](docs/project-state.md).
 
 ```bash
 pnpm install
 pnpm build     # dist/inspector.js + dist/inspector_bg.wasm
 pnpm test          # Rust and TypeScript, via jsdom
 pnpm test:browser  # the inspector layer in a real browser (Playwright)
-pnpm serve              # or: opi serve — then open /examples/inspector.html
+pnpm serve         # then open /examples/inspector.html
 ```
 
 ## Four states, not a score
@@ -231,4 +233,4 @@ entry point.
 
 ## License
 
-MIT.
+MIT — see [LICENSE](LICENSE).

@@ -17,7 +17,7 @@ pnpm build
 
 The result is two files that belong next to each other:
 
-- `dist/inspector.js` — 14.7 kB gzipped, the collector, the API and the inspector layer
+- `dist/inspector.js` — 16.2 kB gzipped, the collector, the API and the inspector layer
 - `dist/inspector_bg.wasm` — 80.3 kB gzipped, the rule engine
 
 The build enforces a size budget and fails when it is exceeded (20 kB for the JavaScript,
