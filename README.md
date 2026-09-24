@@ -17,7 +17,7 @@ overlay: nothing about the page is modified.
 ## Status
 
 **Runnable and embeddable.** `pnpm build` produces `dist/inspector.js` and
-`dist/inspector_bg.wasm`; `LiveAudit.scan()` returns `Finding[]` and
+`dist/a11y_wasm_bg.wasm`; `LiveAudit.scan()` returns `Finding[]` and
 `LiveAudit.show()` puts the inspector layer on the page — frames, markers with
 popovers, and a sidebar grouped by category that docks to any of the four
 edges and can be resized. `LiveAudit.hide()` removes it again. Unlocked per
@@ -60,7 +60,7 @@ in [docs/project-state.md](docs/project-state.md).
 
 ```bash
 pnpm install
-pnpm build     # dist/inspector.js + dist/inspector_bg.wasm
+pnpm build     # dist/inspector.js + dist/a11y_wasm_bg.wasm
 pnpm test          # Rust and TypeScript, via jsdom
 pnpm test:browser  # the inspector layer in a real browser (Playwright)
 pnpm serve         # then open /examples/inspector.html
