@@ -24,8 +24,8 @@ und Schweregrad getrennt, `UNTESTED` sichtbar statt weggefiltert.
 ist. Der Spike wird nicht weiterentwickelt; er bleibt als Beleg der Messung
 stehen.
 
-Der Regelbestand kommt fertig aus
-[a11y-core](https://github.com/casoon/a11y-core). Regeln werden in diesem
+Der Regelbestand kommt fertig aus `a11y-rules` in
+[barrierlab](https://github.com/casoon/barrierlab). Regeln werden in diesem
 Repository **nicht** neu geschrieben. Fehlt eine Regel, gehört sie nach
 `a11y-rules`, nicht hierher.
 

@@ -92,5 +92,5 @@ Aufwand zu beheben — sie folgen daraus, dass der Prüfer *in* der Seite sitzt.
   getrennten Roots fehlauslösen, und eine Referenz, die eine Shadow-Grenze real
   nicht überqueren kann, erscheint auflösbar. Die saubere Lösung ist eine
   bereichsbewusste ID-Auflösung in `a11y-dom`/`accname` — ein Befund für
-  a11y-core, siehe [decisions.md](decisions.md). iframes sind davon nicht
+  barrierlab, siehe [decisions.md](decisions.md). iframes sind davon nicht
   betroffen: Sie werden als eigene Dokumente gescannt.

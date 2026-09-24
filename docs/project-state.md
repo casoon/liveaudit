@@ -42,7 +42,7 @@ wer sich darauf verlässt, bekommt einen `ReferenceError` statt einer Erklärung
 |---|---|
 | Konzept und Architekturentscheidungen | fertig, siehe [decisions.md](decisions.md) |
 | Performance-Messung | fertig, siehe [../spike/ERGEBNIS.md](../spike/ERGEBNIS.md) |
-| Gemeinsamer Kern `a11y-core` | **veröffentlicht**, vier Crates auf crates.io, 0.11.0 mit englischen Befundtexten |
+| Gemeinsamer Kern in barrierlab | **veröffentlicht**, vier `a11y-*`-Crates auf crates.io, 0.11.0 mit englischen Befundtexten |
 | Schritt 1 — Monorepo-Grundgerüst | **fertig** |
 | Schritt 2 — `packages/browser` (DOM Collector) | **fertig** |
 | Schritt 3 — WASM-Schicht (Rule Engine angebunden) | **fertig**, seit 23.09.2026 als `@casoon/a11y-wasm` ausgelagert |
@@ -270,11 +270,11 @@ Collector. Sie kommt mit der ersten Regel, die sie braucht — Zielgrößen.
 ## Bundle-Größe
 
 `dist/inspector.js` 46,1 KB roh / **16,1 KB gzip**, `dist/a11y_wasm_bg.wasm`
-166,7 KB roh / **80,1 KB gzip**. Gesamt 96,2 KB gzip (23.09.2026, a11y-core
-0.11.0, mit Live-Modus und englischen Texten). Das JavaScript liegt damit bei
+166,7 KB roh / **80,1 KB gzip**. Gesamt 96,2 KB gzip (24.09.2026, `a11y-rules`
+0.11.0 über `@casoon/a11y-wasm` 0.1.1, mit Live-Modus und englischen Texten). Das JavaScript liegt damit bei
 **81 % seiner Grenze von 20 KB**.
 
-Der Zuwachs des WASM von 63,1 auf 79,5 KB verteilt sich auf `a11y-core` 0.7.0
+Der Zuwachs des WASM von 63,1 auf 79,5 KB verteilt sich auf `a11y-rules` 0.7.0
 (Tier 3 samt Kontrastregeln) und 0.8.0 (neun Strukturregeln: Landmarks,
 Sprunglink, ARIA-Pflichtattribute, `zoom/viewport-missing`,
 `headings/h1-multiple`). Das Modul liegt damit bei **80 % der Grenze von
@@ -465,7 +465,7 @@ und der Konformitäts-Korpus über alle drei Repositories. Offen aus diesem
 Durchgang:
 
 - **Bereichsbewusste ID-Auflösung** über Shadow-Grenzen — ein Befund für
-  `a11y-core`, keine Regel für dieses Repository. Siehe
+  `a11y-dom`/`accname` in barrierlab, keine Regel für dieses Repository. Siehe
   [constraints.md](constraints.md).
 - **Nur Chromium gemessen.** Firefox und Safari haben andere DOM-Zugriffskosten.
 - **`prefers-reduced-motion` ist umgesetzt, aber nicht per Emulation geprüft.**

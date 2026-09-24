@@ -43,7 +43,7 @@ size.
 |---|---|
 | Concept and architecture decisions | done — [docs/decisions.md](docs/decisions.md) |
 | Performance measurement | done — [spike/ERGEBNIS.md](spike/ERGEBNIS.md) |
-| Shared core `a11y-core` | **published**, four crates on crates.io |
+| Shared core in [barrierlab](https://github.com/casoon/barrierlab) | **published**, `a11y-*` 0.11.0 on crates.io |
 | WASM shell | **done**, extracted to [`@casoon/a11y-wasm`](https://www.npmjs.com/package/@casoon/a11y-wasm) in [barrierlab](https://github.com/casoon/barrierlab) |
 | `packages/browser` — DOM collector | **done** — shadow DOM, frames, identity maps |
 | `packages/ui` — inspector layer | **done** — frames, markers, dockable sidebar |
@@ -90,7 +90,7 @@ reads like a passed check in most tools; here it is reported as
 
 ## One rule set, three surfaces
 
-The rules live in [a11y-core](https://github.com/casoon/a11y-core) and are shared
+The rules live in `a11y-rules` in [barrierlab](https://github.com/casoon/barrierlab) and are shared
 across three tools. A finding has the same rule ID in all of them.
 
 | Surface | Tool | Substrate |

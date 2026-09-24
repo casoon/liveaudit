@@ -272,7 +272,7 @@ den Scan.
   über legitim gleichnamige IDs in getrennten Shadow Roots fehlauslösen, und
   eine Referenz, die real nicht auflösbar ist, kann auflösbar erscheinen.
   Sauber wäre eine bereichsbewusste ID-Auflösung in `a11y-dom`/`accname` —
-  **das ist ein Befund für a11y-core, keine Rechtfertigung, hier eine eigene
+  **das ist ein Befund für barrierlab, keine Rechtfertigung, hier eine eigene
   Regel zu schreiben.**
 
 ## iframes: Same-Origin als eigener Scan, alles andere als `UNTESTED`

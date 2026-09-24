@@ -9,7 +9,7 @@ Befunde am betroffenen Element statt in einem externen Report.
 ## Die vier Regeln, die am leichtesten verletzt werden
 
 1. **Regeln gehören nicht in dieses Repository.** Der Regelbestand liegt in
-   [a11y-core](https://github.com/casoon/a11y-core) und bedient auch
+   `a11y-rules` in [barrierlab](https://github.com/casoon/barrierlab) und bedient auch
    `astro-post-audit` und `auditmysite`. Fehlt eine Regel, gehört sie dorthin.
    Eine Regel hier zu duplizieren bricht die Zusicherung, dass ein Befund überall
    gleich heißt.
@@ -80,6 +80,6 @@ Dokumenten von 1.244 bis 723.613 Knoten:
 
 | Repository | Rolle |
 |---|---|
-| [a11y-core](https://github.com/casoon/a11y-core) | der gemeinsame Regelkern |
+| [barrierlab](https://github.com/casoon/barrierlab) | die gemeinsamen Bibliotheken: Regelkern `a11y-*`, WASM-Schicht `@casoon/a11y-wasm` |
 | [astro-post-audit](https://github.com/casoon/astro-post-audit) | derselbe Kern zur Build-Zeit |
 | [auditmysite](https://github.com/casoon/auditmysite) | derselbe Kern in CI und Crawl |
