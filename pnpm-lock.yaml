@@ -29,20 +29,18 @@ importers:
 
   packages/browser:
     dependencies:
-      '@liveaudit/core':
-        specifier: workspace:*
-        version: link:../core
-
-  packages/core: {}
+      '@casoon/a11y-wasm':
+        specifier: ^0.1.1
+        version: 0.1.1
 
   packages/liveaudit:
     dependencies:
+      '@casoon/a11y-wasm':
+        specifier: ^0.1.1
+        version: 0.1.1
       '@liveaudit/browser':
         specifier: workspace:*
         version: link:../browser
-      '@liveaudit/core':
-        specifier: workspace:*
-        version: link:../core
       '@liveaudit/ui':
         specifier: workspace:*
         version: link:../ui
@@ -335,6 +333,10 @@ packages:
   '@capsizecss/unpack@4.0.1':
     resolution: {integrity: sha512-CuNiSqg7+e1cO/GjffyMOm5Tt2jUF9CWHHnvQ/UkqvtkGfHdgwEC0wpmq7fkN3gxwpRnrAN0WzO3vREKmNolMQ==}
     engines: {node: '>=18'}
+
+  '@casoon/a11y-wasm@0.1.1':
+    resolution: {integrity: sha512-rlx7GzsHtq5Iwq+Mel0UXg3Zic8fRrWFJId6DVYKIvMPtjnRUdf1fsrQMiUWrUF6SS4zTrWgsCPbPjdmulPnJw==}
+    engines: {node: '>=22.12.0'}
 
   '@casoon/pages-theme@file:site/vendor/pages-theme':
     resolution: {directory: site/vendor/pages-theme, type: directory}
@@ -2431,6 +2433,8 @@ snapshots:
   '@capsizecss/unpack@4.0.1':
     dependencies:
       fontkitten: 1.0.3
+
+  '@casoon/a11y-wasm@0.1.1': {}
 
   '@casoon/pages-theme@file:site/vendor/pages-theme(@astrojs/markdown-satteri@0.4.1)(astro@7.3.3(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(@types/node@24.13.6)(yaml@2.9.1))':
     dependencies:
