@@ -2,7 +2,7 @@
  * Legt die gebauten Artefakte neben die Demo-Seite der Projektseite.
  *
  * `site/public/demo/start.js` gehört zur Seite und liegt im Repository;
- * `inspector.js` und `inspector_bg.wasm` entstehen aus `pnpm build` und werden
+ * `inspector.js` und `a11y_wasm_bg.wasm` entstehen aus `pnpm build` und werden
  * hierher kopiert, statt committet zu werden — die Demo zeigt sonst irgendwann
  * einen Stand, den niemand mehr baut.
  */
@@ -15,7 +15,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const dist = join(root, "dist");
 const ziel = join(root, "site", "public", "demo");
 
-const DATEIEN = ["inspector.js", "inspector_bg.wasm"];
+const DATEIEN = ["inspector.js", "a11y_wasm_bg.wasm"];
 
 for (const name of DATEIEN) {
   try {
