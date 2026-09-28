@@ -14,7 +14,7 @@ Das Script lädt die WASM-Analyse-Engine selbst nach und zeigt Befunde direkt au
 der untersuchten Seite an (Inspector-Layer), statt einen externen Report zu
 erzeugen — das ist der Unterschied zu Lighthouse/klassischen Scan-Reports.
 
-## Status (23.09.2026)
+## Status (28.09.2026)
 
 **LiveAudit ist veröffentlicht.** Das Repository liegt öffentlich unter
 [github.com/casoon/liveaudit](https://github.com/casoon/liveaudit) unter MIT, die
@@ -30,8 +30,10 @@ Seitenleiste —, und ohne ausdrückliche Freischaltung ist das Script inert.
 `examples/inspector.html` zeigt den Layer, `examples/csp.html` den CSP-Pfad.
 
 **Die sichtbaren Texte sind englisch** — die des Layers ebenso wie die
-Befundtexte aus `a11y-rules` seit 0.11.0. Code, Kommentare und diese Doku bleiben
-deutsch; die Regel steht in [decisions.md](decisions.md).
+Befundtexte aus `a11y-rules`. Der Kern kann seit 0.12 auch Deutsch, aber nur mit
+dem Feature `de`; `@casoon/a11y-wasm` baut ohne es, die deutschen Texte kommen
+also gar nicht erst in das ausgelieferte Modul. Code, Kommentare und diese Doku
+bleiben deutsch; die Regel steht in [decisions.md](decisions.md).
 
 Die Beispielseiten rufen **`enable()`** und umgehen das Flag damit bewusst —
 sie sind der programmgesteuerte Fall aus [decisions.md](decisions.md). Ein
@@ -42,7 +44,7 @@ wer sich darauf verlässt, bekommt einen `ReferenceError` statt einer Erklärung
 |---|---|
 | Konzept und Architekturentscheidungen | fertig, siehe [decisions.md](decisions.md) |
 | Performance-Messung | fertig, siehe [../spike/ERGEBNIS.md](../spike/ERGEBNIS.md) |
-| Gemeinsamer Kern in barrierlab | **veröffentlicht**, vier `a11y-*`-Crates auf crates.io, 0.12.0: Texte englisch oder deutsch, `ids/duplicate` nach WCAG 2.2 |
+| Gemeinsamer Kern in barrierlab | **veröffentlicht**, vier `a11y-*`-Crates auf crates.io, 0.12.1: Texte englisch, deutsch hinter Feature `de`; `ids/duplicate` nach WCAG 2.2 (nur mit IDREF-Verweis) |
 | Schritt 1 — Monorepo-Grundgerüst | **fertig** |
 | Schritt 2 — `packages/browser` (DOM Collector) | **fertig** |
 | Schritt 3 — WASM-Schicht (Rule Engine angebunden) | **fertig**, seit 23.09.2026 als `@casoon/a11y-wasm` ausgelagert |
