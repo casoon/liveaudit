@@ -33,15 +33,16 @@ eigenes CLI gehört deshalb nicht in dieses Repository.
 ```
 liveaudit/
 packages/
-├── core/       Rust → WASM
-├── browser/    TypeScript
-├── ui/         TypeScript + CSS
+├── browser/    TypeScript: Collector, Scan, Element-Identität
+├── ui/         TypeScript + CSS: Inspector-Layer
 └── liveaudit/  TypeScript: Freischaltung und öffentliche API
 ```
 
-Die Abhängigkeiten laufen in eine Richtung: `liveaudit → ui → browser → core`.
-Läge die öffentliche API in `browser`, entstünde ein Zyklus — sie braucht
-`show()`/`hide()` aus `ui`, während `ui` auf `browser` aufbaut.
+Die Abhängigkeiten laufen in eine Richtung: `liveaudit → ui → browser`, und am
+Ende steht `@casoon/a11y-wasm` — `browser` braucht es für den Scan, `liveaudit`
+initialisiert das Modul. Läge die öffentliche API in `browser`, entstünde ein
+Zyklus — sie braucht `show()`/`hide()` aus `ui`, während `ui` auf `browser`
+aufbaut.
 
 Build-Output: `dist/inspector.js`, `dist/a11y_wasm_bg.wasm`. Der Anwender bindet
 nur `inspector.js` ein, das WASM lädt sich selbst nach.
@@ -151,6 +152,11 @@ vollständige Vertrag steht als TypeScript-Typ in
 `packages/browser/src/report.ts` und ist über alle drei Oberflächen derselbe;
 die Feldnamen sind die des Rust-Modells und werden nicht umbenannt.
 
+Die Texte eines Findings sind englisch. `a11y-rules` kann sie auch auf Deutsch
+liefern (`run_with_semantics_in(doc, Locale::De)`), aber nur mit dem Feature
+`de`; `@casoon/a11y-wasm` baut ohne es und ruft die englischen Einstiege auf.
+Die deutschen Vorlagen kommen so gar nicht erst in das ausgelieferte Modul.
+
 Daneben liefert der Bericht je Regel einen `RuleRun`: `not_run` sagt, **warum**
 eine Regel nicht lief — `capability_missing`, wenn der Host das Tier nicht
 bedient.
@@ -200,15 +206,17 @@ Der Host ist `pointer-events: none`; nur Marker und Panel setzen
 
 Vier Darstellungsvarianten:
 
-1. **Rahmen** — für größere Elemente (z. B. Button ohne Accessible Name):
-   Rechteck im Layer, deckungsgleich mit `getBoundingClientRect()` des Zielelements.
-2. **Marker** — für kleine Elemente (z. B. Icons): nummerierter Punkt, Klick öffnet
-   ein Popover mit Erklärung, WCAG-Referenz, Code-Ausschnitt und
-   `[Element] [Details]`-Aktionen.
-3. **Seitenleiste** — Fehlerliste gruppiert nach Kategorie (Struktur, Bilder,
-   Formulare, ARIA, Tastatur, Kontrast, …). Klick auf ein Finding:
-   `element.scrollIntoView({ behavior: "smooth", block: "center" })` gefolgt von
-   Marker-Anzeige. Das verbindet Report und reale Seite.
+1. **Rahmen** — für Elemente ab 34 × 18 px: Rechteck im Layer, deckungsgleich
+   mit `getBoundingClientRect()` des Zielelements, `pointer-events: none`.
+2. **Marker plus Popover** — für **jeden** Befund, auch dort, wo ein Rahmen
+   daneben steht: Der nummerierte Marker ist das Bedienelement. Klick öffnet ein
+   Popover mit Erklärung, WCAG-Referenz, Code-Ausschnitt und den Aktionen
+   „Reveal element" und „Details in the list".
+3. **Seitenleiste** — Befundliste, gruppiert nach dem Präfix der Rule-ID
+   (`images`, `forms`, `aria`, `keyboard`, `contrast`, …), andockbar an alle vier
+   Kanten. Klick auf einen Befund scrollt per `scrollIntoView` zum Element —
+   weich, außer bei `prefers-reduced-motion` — und zeigt dessen Marker. Das
+   verbindet Report und reale Seite.
 4. **Fokusreihenfolge** — nummerierte Marker über der tatsächlichen
    Tab-Reihenfolge, inkl. Auflistung der `tabindex`-Werte, um Fälle wie
    `tabindex="4"` neben `tabindex="12"` oder unsichtbare fokussierbare Elemente
@@ -218,7 +226,7 @@ Vier Darstellungsvarianten:
 
 Moderne Seiten (React/Vue/Astro Islands) verändern ihren DOM laufend. Ein
 `MutationObserver` beobachtet das und löst nach einem Debounce von 200 ms einen
-Re-Scan der neuen Nodes aus (nicht der gesamten Seite).
+Re-Scan des geänderten Teilbaums aus, nie des ganzen Dokuments.
 
 ## Umfang
 
