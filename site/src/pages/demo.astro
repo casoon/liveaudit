@@ -63,8 +63,9 @@ const invented = {
         <p><input type="text" id="twice" /></p>
         <p><input type="email" placeholder="Email address" /></p>
 
-        <!-- ids/duplicate -->
+        <!-- ids/duplicate: a reference to an id that exists twice is ambiguous -->
         <p id="twice">The same id, a second time.</p>
+        <p aria-describedby="twice">Which of the two describes this?</p>
 
         <!-- links/name-missing, links/generic-name -->
         <p><a href="#demo-status"></a> <a href="#demo-status">here</a></p>

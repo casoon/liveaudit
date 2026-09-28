@@ -13,13 +13,16 @@ function ruleIds(report: { findings: { rule_id: string }[] }): Set<string> {
 
 describe("Regelbestand über der Arena", () => {
   it("erzeugt für bekannte Fehler die erwarteten Rule-IDs", () => {
+    // Die doppelte ID braucht einen Verweis: Seit a11y-rules 0.12 (WCAG 2.2)
+    // ist nur eine referenzierte Dopplung ein Befund. Eine Beschreibung ist
+    // kein Name — buttons/name-missing bleibt.
     const doc = parse(`<!doctype html><html><head><title></title></head><body>
       <h3>Übersprungene Ebene</h3>
       <img src="logo.png">
       <input type="text" id="dup">
       <span id="dup"></span>
       <a href="/a"></a>
-      <button tabindex="3"></button>
+      <button tabindex="3" aria-describedby="dup"></button>
     </body></html>`);
 
     const result = scan(doc.documentElement);

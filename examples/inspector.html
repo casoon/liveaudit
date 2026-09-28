@@ -55,8 +55,9 @@
       <p><input type="text" id="doppelt" /></p>
       <p><input type="email" placeholder="E-Mail-Adresse" /></p>
 
-      <!-- ids/duplicate -->
+      <!-- ids/duplicate: ein Verweis auf eine doppelt vergebene id ist mehrdeutig -->
       <span id="doppelt">Zweite Verwendung derselben id.</span>
+      <p aria-describedby="doppelt">Welche der beiden beschreibt das?</p>
 
       <!-- links/name-missing und links/ambiguous-name -->
       <p><a href="/ziel"></a> <a href="/anderes-ziel">hier</a></p>
