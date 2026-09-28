@@ -42,7 +42,7 @@ wer sich darauf verlässt, bekommt einen `ReferenceError` statt einer Erklärung
 |---|---|
 | Konzept und Architekturentscheidungen | fertig, siehe [decisions.md](decisions.md) |
 | Performance-Messung | fertig, siehe [../spike/ERGEBNIS.md](../spike/ERGEBNIS.md) |
-| Gemeinsamer Kern in barrierlab | **veröffentlicht**, vier `a11y-*`-Crates auf crates.io, 0.11.0 mit englischen Befundtexten |
+| Gemeinsamer Kern in barrierlab | **veröffentlicht**, vier `a11y-*`-Crates auf crates.io, 0.12.0: Texte englisch oder deutsch, `ids/duplicate` nach WCAG 2.2 |
 | Schritt 1 — Monorepo-Grundgerüst | **fertig** |
 | Schritt 2 — `packages/browser` (DOM Collector) | **fertig** |
 | Schritt 3 — WASM-Schicht (Rule Engine angebunden) | **fertig**, seit 23.09.2026 als `@casoon/a11y-wasm` ausgelagert |
@@ -270,16 +270,18 @@ Collector. Sie kommt mit der ersten Regel, die sie braucht — Zielgrößen.
 ## Bundle-Größe
 
 `dist/inspector.js` 46,1 KB roh / **16,1 KB gzip**, `dist/a11y_wasm_bg.wasm`
-166,7 KB roh / **80,1 KB gzip**. Gesamt 96,2 KB gzip (24.09.2026, `a11y-rules`
-0.11.0 über `@casoon/a11y-wasm` 0.1.1, mit Live-Modus und englischen Texten). Das JavaScript liegt damit bei
+173,6 KB roh / **83,3 KB gzip**. Gesamt 99,4 KB gzip (28.09.2026, `a11y-rules`
+0.12.0 über `@casoon/a11y-wasm` 0.2.0). Das JavaScript liegt damit bei
 **81 % seiner Grenze von 20 KB**.
 
 Der Zuwachs des WASM von 63,1 auf 79,5 KB verteilt sich auf `a11y-rules` 0.7.0
 (Tier 3 samt Kontrastregeln) und 0.8.0 (neun Strukturregeln: Landmarks,
 Sprunglink, ARIA-Pflichtattribute, `zoom/viewport-missing`,
-`headings/h1-multiple`). Das Modul liegt damit bei **80 % der Grenze von
-100 KB** — die am 19.09.2026 angehobene Grenze war richtig bemessen, aber bei
-20 KB Luft wird der nächste Tier-Ausbau sie zum Thema machen.
+`headings/h1-multiple`). Mit 0.12.0 kamen noch einmal **+3,2 KB** dazu: Das
+Modul trägt seitdem die Befundtexte in zwei Sprachen, obwohl LiveAudit nur die
+englischen benutzt. Es liegt damit bei **83 % der Grenze von 100 KB** — bei
+17 KB Luft wird der nächste Tier-Ausbau sie zum Thema machen. Ein Hebel läge in
+barrierlab: die deutschen Texte hinter ein Feature legen.
 
 Der Inspector-Layer kostet **+7,4 KB gzip** am JavaScript (vorher 3,6 KB).
 
@@ -445,7 +447,9 @@ Dateien von `astro check`, nicht von Biome.
 Gemessen am 20.09.2026: `check-site.cjs` meldet über neun Seiten in hell und
 dunkel **all clean** — kein axe-Befund, keine fremde Herkunft, keine toten
 Links. Die Demo selbst findet **18 Befunde über 190 Knoten**, mit
-Kontrastdurchgang **27**; darunter `contrast/text-insufficient` bei 2,85:1 und
+Kontrastdurchgang **27** (nachgemessen am 28.09.2026 mit `a11y-rules` 0.12.0;
+das Duplikat-Beispiel trägt seitdem einen `aria-describedby`-Verweis, weil eine
+doppelte ID ohne Verweis nach WCAG 2.2 kein Befund mehr ist); darunter `contrast/text-insufficient` bei 2,85:1 und
 `contrast/text-undetermined` auf dem Verlauf, also ein sichtbares `UNTESTED`.
 
 Ein Befund aus dem Bau:
