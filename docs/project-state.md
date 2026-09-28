@@ -242,7 +242,8 @@ Drei Befunde:
   `Semantics` und `Rendering` und ruft `a11y_rules::run_full`. Das Modul rechnet
   nichts aus; es reicht durch, was der Collector gesammelt hat.
 - **`LiveAudit.scan(root, { rendering: true })`** schaltet ihn ein. Ohne ihn
-  melden die Kontrastregeln `UNTESTED` — nicht `PASS` und nicht Schweigen.
+  laufen die Kontrastregeln nicht und stehen mit `capability_missing` unter
+  „Rules that did not run" — nicht als `PASS` und nicht durch Schweigen.
 
 **Der Aufstieg folgt dem flachen Baum, nicht `parentElement`.** An der
 Shadow-Grenze endet `parentElement`, und an einem geslotteten Element zeigt es

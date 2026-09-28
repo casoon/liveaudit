@@ -88,6 +88,17 @@ Entschieden: **Zustand + Severity**, `certainty` entfällt als eigenes Feld.
 - `PASS` wird intern gespeichert, aber standardmäßig nicht visualisiert.
 - `UNTESTED`-Fälle (z. B. gefundenes Video) erzeugen eine manuelle Prüfliste statt
   eines automatischen Fail/Pass-Urteils.
+- **„Nicht gelaufen" ist kein `UNTESTED`.** Drei Dinge sind „nicht bestanden",
+  ohne dasselbe zu sein, und der Bericht hält sie auseinander:
+  - ein **Befund mit `UNTESTED`** — die Regel lief, konnte aber nicht entscheiden
+    (Text auf einem Verlauf, `contrast/text-undetermined`);
+  - ein **Vermerk „nicht gelaufen"** am Regellauf (`rule_runs`, `not_run` mit
+    Grund, etwa `capability_missing`) — die Regel lief gar nicht, weil der Host
+    ihr Tier nicht bedient; in der Seitenleiste „Rules that did not run";
+  - ein **nicht erreichbarer Bereich** (`untested` im Scan-Ergebnis) — ein Teil
+    der Seite, etwa ein Cross-Origin-Frame, wurde nicht gescannt; in der
+    Seitenleiste „Unreachable scopes".
+  Keines davon wird zu `PASS` oder verschwindet still.
 - UI (Seitenleiste, Marker-Popover) zeigt Zustand und `severity` immer getrennt an,
   nie zu einem einzigen Prozentwert verrechnet.
 - Eine Regel, die ihre Aussage nur heuristisch treffen kann, liefert `REVIEW` —

@@ -62,7 +62,7 @@ LiveAudit.hide();                            // nothing of it stays behind`;
       },
       {
         title: '"Not testable" is not "passed"',
-        body: 'A contrast rule without rendering access reads like a passed check in most tools. Here it reports UNTESTED and names what it could not inspect — text on a gradient has no single background colour to measure, so no verdict is given.',
+        body: 'A contrast rule without rendering access reads like a passed check in most tools. Here it is listed as not run, with the reason. Where it runs but cannot decide — text on a gradient has no single background colour to measure — it reports UNTESTED instead of a verdict.',
       },
       {
         title: 'It inspects. It does not repair.',

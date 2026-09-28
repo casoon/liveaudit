@@ -25,8 +25,8 @@ page with `?liveaudit`; inert without it.
 
 **Contrast runs too**, via an opt-in second pass:
 `scan(root, { rendering: true })`. It costs 1.9× to 4.6× the collector, so it
-is not the default — and without it the contrast rules report `UNTESTED`, never
-`PASS`.
+is not the default — and without it the contrast rules do not run and are
+recorded as *not run*, with the reason, never as `PASS`.
 
 **It can stay current while the page changes.** `LiveAudit.watch()` observes the
 document and rescans **only the changed subtree**, 200 ms after the last

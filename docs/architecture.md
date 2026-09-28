@@ -106,8 +106,10 @@ darstellen, sondern darin, **welche Daten es überhaupt gibt**:
 | Rendering — Stile, Geometrie | — | ✓ | ✓ |
 | Interaktion — Fokus, Ereignisse | — | ✓ | ✓ (nativ, billig) |
 
-Eine Regel, deren Tier der Host nicht bedient, liefert `UNTESTED` — nicht
-Schweigen und nicht `PASS`.
+Eine Regel, deren Tier der Host nicht bedient, läuft nicht und wird mit Grund
+als nicht gelaufen vermerkt (`capability_missing`) — nicht als `PASS` und nicht
+durch Schweigen. `UNTESTED` ist etwas anderes: der Zustand eines Befunds, wenn
+eine Regel lief, aber automatisch nicht entscheiden konnte.
 
 **Wichtig für LiveAudit:** In-Page-JavaScript kommt **nicht** an den nativen
 Accessibility-Tree. `getComputedRole`/`getComputedLabel` sind

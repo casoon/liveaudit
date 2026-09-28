@@ -20,9 +20,12 @@ Befunde am betroffenen Element statt in einem externen Report.
    ist davon ausgenommen und hat dafür eigene Auflagen — siehe
    [docs/decisions.md](docs/decisions.md).
 
-3. **„Nicht prüfbar" ist nicht „bestanden".** Eine Regel, deren Tier der Host
-   nicht bedient, liefert `UNTESTED` — nicht `PASS` und nicht Schweigen. Das ist
-   der fachliche Kern gegenüber Score-Werkzeugen, nicht eine Formalie.
+3. **„Nicht geprüft" ist nicht „bestanden".** Eine Regel, deren Tier der Host
+   nicht bedient, läuft nicht und steht mit Grund als *nicht gelaufen* im
+   Bericht (`capability_missing`). Eine Regel, die läuft, aber automatisch nicht
+   entscheiden kann, liefert einen Befund mit `UNTESTED`. Beides ist nie `PASS`
+   und nie Schweigen — der fachliche Kern gegenüber Score-Werkzeugen, nicht eine
+   Formalie.
 
 4. **„Inspector-Layer", nicht „Overlay".** „Overlay" bezeichnet eine Kategorie
    von Werkzeugen, die die Seite zu *reparieren* vorgeben, und bleibt dieser

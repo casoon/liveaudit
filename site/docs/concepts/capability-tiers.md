@@ -15,8 +15,10 @@ declares what it needs, and the host declares what it can serve.
 | 3 | Report computed styles and geometry | `contrast/text-insufficient` |
 | 4 | Observe interaction: focus order, live regions | not built yet |
 
-If the host does not serve a rule's tier, the rule reports `UNTESTED` — never `PASS`, and
-never nothing at all. That is the fact this project is built around rather than a formality.
+If the host does not serve a rule's tier, the rule does not run — and the report says so,
+with the reason, instead of passing it or saying nothing at all. That is the fact this project
+is built around rather than a formality. `UNTESTED` is something else: a rule that did run but
+cannot decide, such as text on a gradient.
 
 ## What LiveAudit serves
 

@@ -44,7 +44,8 @@ part of every scan:
 await LiveAudit.show(undefined, { rendering: true });
 ```
 
-Without it the contrast rules report `UNTESTED` — never `PASS`, and never silence.
+Without it the contrast rules do not run; the report lists them as not run, with the reason —
+never as `PASS`, and never silence.
 
 ## Live mode: `watch(root?, options?)`
 

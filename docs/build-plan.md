@@ -48,7 +48,8 @@ zurückgesetzt wird, ist offen.
 
 **Abnahme:** Auf einer Fixture mit bekannter Reihenfolge stimmen die
 nummerierten Marker mit der tatsächlichen Tabreihenfolge überein. Ohne
-Tier-4-Bedienung melden die Regeln `UNTESTED` mit Grund, nicht `PASS`. Nach dem
+Tier-4-Bedienung laufen die Regeln nicht und stehen mit Grund als nicht gelaufen
+im Bericht, nicht als `PASS`. Nach dem
 Lauf steht der Fokus wieder dort, wo er vorher stand.
 
 ---
