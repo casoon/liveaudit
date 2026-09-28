@@ -270,18 +270,19 @@ Collector. Sie kommt mit der ersten Regel, die sie braucht — Zielgrößen.
 ## Bundle-Größe
 
 `dist/inspector.js` 46,1 KB roh / **16,1 KB gzip**, `dist/a11y_wasm_bg.wasm`
-173,6 KB roh / **83,3 KB gzip**. Gesamt 99,4 KB gzip (28.09.2026, `a11y-rules`
-0.12.0 über `@casoon/a11y-wasm` 0.2.0). Das JavaScript liegt damit bei
+168,5 KB roh / **80,9 KB gzip**. Gesamt 97,0 KB gzip (28.09.2026, `a11y-rules`
+0.12.1 über `@casoon/a11y-wasm` 0.2.1). Das JavaScript liegt damit bei
 **81 % seiner Grenze von 20 KB**.
 
 Der Zuwachs des WASM von 63,1 auf 79,5 KB verteilt sich auf `a11y-rules` 0.7.0
 (Tier 3 samt Kontrastregeln) und 0.8.0 (neun Strukturregeln: Landmarks,
 Sprunglink, ARIA-Pflichtattribute, `zoom/viewport-missing`,
-`headings/h1-multiple`). Mit 0.12.0 kamen noch einmal **+3,2 KB** dazu: Das
-Modul trägt seitdem die Befundtexte in zwei Sprachen, obwohl LiveAudit nur die
-englischen benutzt. Es liegt damit bei **83 % der Grenze von 100 KB** — bei
-17 KB Luft wird der nächste Tier-Ausbau sie zum Thema machen. Ein Hebel läge in
-barrierlab: die deutschen Texte hinter ein Feature legen.
+`headings/h1-multiple`). `a11y-rules` 0.12 liefert Befundtexte auch auf
+Deutsch; die deutschen Vorlagen hängen dort am Feature `de`, und
+`@casoon/a11y-wasm` baut ohne es — LiveAudit gibt nur Englisch aus. Übrig
+bleiben +0,8 KB für das neue `ids/duplicate`. Das Modul liegt damit bei
+**81 % der Grenze von 100 KB** — bei 19 KB Luft wird der nächste Tier-Ausbau
+sie zum Thema machen.
 
 Der Inspector-Layer kostet **+7,4 KB gzip** am JavaScript (vorher 3,6 KB).
 

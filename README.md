@@ -43,7 +43,7 @@ size.
 |---|---|
 | Concept and architecture decisions | done — [docs/decisions.md](docs/decisions.md) |
 | Performance measurement | done — [spike/ERGEBNIS.md](spike/ERGEBNIS.md) |
-| Shared core in [barrierlab](https://github.com/casoon/barrierlab) | **published**, `a11y-*` 0.12.0 on crates.io |
+| Shared core in [barrierlab](https://github.com/casoon/barrierlab) | **published**, `a11y-*` 0.12.1 on crates.io |
 | WASM shell | **done**, extracted to [`@casoon/a11y-wasm`](https://www.npmjs.com/package/@casoon/a11y-wasm) in [barrierlab](https://github.com/casoon/barrierlab) |
 | `packages/browser` — DOM collector | **done** — shadow DOM, frames, identity maps |
 | `packages/ui` — inspector layer | **done** — frames, markers, dockable sidebar |
@@ -123,7 +123,7 @@ Measured on 2026-09-18 across five real documents from 1,244 to 723,613 nodes
 - DOM traversal in JavaScript before it: **79 ms** — about 90% of total time, and
   the actual bottleneck
 - WASM size in that spike: **22 KB gzipped** for its own arena plus 20 simple
-  rules. The shipped module is larger — 83.3 KB gzipped — because it carries the
+  rules. The shipped module is larger — 80.9 KB gzipped — because it carries the
   full `a11y-rules` set and the name computation from `accname`. Performance is
   therefore neither an argument for nor against WASM; the reason is rule reuse
   across three surfaces.
