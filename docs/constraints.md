@@ -49,8 +49,10 @@ Technisch prüfbar, inhaltlich nicht zuverlässig automatisch beurteilbar:
 - **Tier 3 ist ein eigener Durchgang, kein Standard.** `getComputedStyle()`
   kostet pro Aufruf, nicht pro Layout; der Durchgang kostet gemessen das 1,9- bis
   4,6-fache des Collectors und läuft nur auf Anforderung
-  (`scan(root, { rendering: true })`). Ohne ihn melden die betroffenen Regeln
-  `UNTESTED`, nicht `PASS`.
+  (`scan(root, { rendering: true })`). Ohne ihn laufen die Kontrastregeln gar
+  nicht und stehen mit `capability_missing` als nicht gelaufen im Bericht — nicht
+  als bestanden. Ein `UNTESTED`-Befund entsteht erst, wenn der Durchgang lief und
+  eine Farbe trotzdem nicht bestimmbar war (`contrast/text-undetermined`).
 - **`getBoundingClientRect()` je Knoten wird nicht erhoben.** Geometrie kostet
   noch einmal so viel wie der ganze Collector und kommt erst mit der ersten
   Regel, die sie braucht.
@@ -88,9 +90,12 @@ Aufwand zu beheben — sie folgen daraus, dass der Prüfer *in* der Seite sitzt.
   keine Eigenheit von LiveAudit, sondern gilt für jedes WASM in der Seite.
 - **Der ID-Raum über Shadow-Grenzen wird verschmolzen.** Der Collector legt den
   flachen Baum in *eine* Arena; die getrennten ID-Räume der Shadow Roots gehen
-  dabei verloren. `ids/duplicate` kann dadurch über legitim gleichnamige IDs in
-  getrennten Roots fehlauslösen, und eine Referenz, die eine Shadow-Grenze real
-  nicht überqueren kann, erscheint auflösbar. Die saubere Lösung ist eine
+  dabei verloren. `ids/duplicate` meldet seit `a11y-rules` 0.12 nur noch
+  Duplikate, auf die ein IDREF zeigt; über Shadow-Grenzen kann es trotzdem
+  fehlauslösen, wenn legitim gleichnamige IDs in getrennten Roots liegen und
+  irgendwo ein Verweis auf den Namen steht — die Arena sieht nicht, dass der
+  Verweis nur in seinem eigenen Root gilt. Umgekehrt erscheint eine Referenz,
+  die eine Shadow-Grenze real nicht überqueren kann, auflösbar. Die saubere Lösung ist eine
   bereichsbewusste ID-Auflösung in `a11y-dom`/`accname` — ein Befund für
   barrierlab, siehe [decisions.md](decisions.md). iframes sind davon nicht
   betroffen: Sie werden als eigene Dokumente gescannt.
