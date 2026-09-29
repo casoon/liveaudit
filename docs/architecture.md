@@ -249,5 +249,5 @@ Re-Scan des geänderten Teilbaums aus, nie des ganzen Dokuments.
 Gebaut ist die Kette DOM Collector → Arena → Rule Engine → `Finding[]` →
 Inspector-Layer, dazu der Tier-3-Durchgang für Kontrast und der Live-Modus. Der
 Regelkatalog steht in `a11y-rules` und wächst dort, nicht hier. Was noch fehlt —
-Tier 4, npm-Paket, Konformitäts-Korpus — steht mit Abnahmekriterien in
+Tier 4, Grenzwerte für das Seitengewicht, Konformitäts-Korpus — steht mit Abnahmekriterien in
 [build-plan.md](build-plan.md).

@@ -12,7 +12,7 @@ veröffentlichten Crates steht — keine Vorgeschichte.
 
 ## Was steht
 
-Die Schritte 1 bis 5 sind gebaut: Monorepo, DOM Collector, Rule Engine über der
+Die Schritte 1 bis 5 und 8 sind gebaut: Monorepo, DOM Collector, Rule Engine über der
 Arena, Inspector-Layer und Auslieferungsmodell — dazu der Tier-3-Durchgang für
 Kontrast und der Live-Modus über `MutationObserver`. Was das im Einzelnen
 leistet, steht in [project-state.md](project-state.md); die Vorgaben, unter denen
@@ -65,25 +65,6 @@ wahrscheinlichsten Fehler: „Regel feuert in der CLI, aber nicht in-page" ist e
 
 **Abnahme:** Derselbe Fixture-Satz erzeugt in allen drei Oberflächen dieselben
 Rule-IDs. Eine Abweichung ist ein Fehlschlag, keine Eigenheit der Oberfläche.
-
----
-
-## 8 — Auslieferung als npm-Paket
-
-**Ziel:** Was heute nur aus dem Repository gebaut werden kann, wird installierbar
-— Self-Hosting bleibt der Weg, das Paket ersetzt nur das Selbstbauen.
-
-**Vorgabe aus [decisions.md](decisions.md):** npm-Paket statt CDN. Kein zentral
-gehostetes Script, auch nicht als Bequemlichkeitsvariante.
-
-**Stand 29.09.2026: gebaut, Veröffentlichung von 0.1.0 steht aus.** Das Paket
-heißt `@casoon/liveaudit`, liegt in `npm/` und trägt die gebauten Dateien; die
-Versionsregel steht in [decisions.md](decisions.md). Offen bleibt nur der
-`npm publish` — er braucht ein Einmal-Passwort.
-
-**Abnahme:** Installation plus Kopieren der beiden Dateien in ein fremdes
-Projekt ergibt einen lauffähigen Inspector, ohne dass dort Rust vorhanden sein
-muss. Das Bundle-Budget gilt im Paket wie im Repository.
 
 ---
 

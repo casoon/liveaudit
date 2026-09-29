@@ -1,6 +1,6 @@
 ---
 title: Embedding it
-description: Build the two files, copy them into your own site, unlock the page.
+description: Install the package, copy the two files into your own site, unlock the page.
 order: 10
 ---
 
@@ -8,25 +8,30 @@ LiveAudit is **self-hosted**. There is no CDN, and that is a decision rather tha
 omission: a centrally hosted script would make someone else's domain a permanent dependency
 of every site that embeds it — a poor trade for a tool you need occasionally.
 
-## Build
+## Install
 
 ```bash
-pnpm install
-pnpm build
+npm install @casoon/liveaudit
 ```
 
-The result is two files that belong next to each other:
+The package holds two files that belong next to each other:
 
-- `dist/inspector.js` — 18.8 kB gzipped, the collector, the API and the inspector layer
-- `dist/a11y_wasm_bg.wasm` — 80.9 kB gzipped, the rule engine
+- `inspector.js` — 18.8 kB gzipped, the collector, the API and the inspector layer
+- `a11y_wasm_bg.wasm` — 80.9 kB gzipped, the rule engine
 
-The build enforces a size budget and fails when it is exceeded (25 kB for the JavaScript,
-100 kB for the module). A budget that is only reported is not a budget.
+Building from this repository gives the same two files in `dist/` (`pnpm install`, then
+`pnpm build`). The build enforces a size budget and fails when it is exceeded (25 kB for the
+JavaScript, 100 kB for the module). A budget that is only reported is not a budget.
 
 ## Serve
 
-Copy both files into your own site, keeping them side by side — the module resolves its
-WebAssembly relative to itself:
+Copy both files into your own site as part of your build, keeping them side by side — the
+module resolves its WebAssembly relative to itself:
+
+```bash
+mkdir -p public/vendor/liveaudit
+cp node_modules/@casoon/liveaudit/inspector.js node_modules/@casoon/liveaudit/a11y_wasm_bg.wasm public/vendor/liveaudit/
+```
 
 ```html
 <script type="module" src="/vendor/liveaudit/inspector.js"></script>

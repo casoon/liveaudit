@@ -60,7 +60,7 @@ size.
 | Live mode — rescan on mutation | **done** — changed subtree only |
 | Page weight — size by type, timings | **done** — numbers only, thresholds open |
 | Tier 4 — focus order, target size, reflow | open |
-| npm package | open — build it from this repository for now |
+| npm package | **published** — [`@casoon/liveaudit`](https://www.npmjs.com/package/@casoon/liveaudit) |
 
 The first five build steps are done; what is still open, with acceptance
 criteria, is in [docs/build-plan.md](docs/build-plan.md), and the current state
@@ -138,10 +138,12 @@ Measured on 2026-09-18 across five real documents from 1,244 to 723,613 nodes
 
 ## Getting it onto a page
 
-LiveAudit is **self-hosted**: you copy `dist/` into your own project and serve it
-from your own domain. There is no CDN — a centrally hosted script would make its
-domain a permanent dependency of every site that embeds it, which is a poor
-trade for a tool you only need occasionally.
+LiveAudit is **self-hosted**: install
+[`@casoon/liveaudit`](https://www.npmjs.com/package/@casoon/liveaudit) (or build
+it from this repository) and serve `inspector.js` and `a11y_wasm_bg.wasm` side by
+side from your own domain. There is no CDN — a centrally hosted script would
+make its domain a permanent dependency of every site that embeds it, which is a
+poor trade for a tool you only need occasionally.
 
 ```html
 <script type="module" src="/vendor/liveaudit/inspector.js"></script>
