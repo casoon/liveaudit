@@ -61,7 +61,7 @@ await copyFile(wasm, join(dist, "a11y_wasm_bg.wasm"));
  * einem Commit. Siehe docs/decisions.md.
  */
 const BUDGET_KB_GZIP = {
-  "inspector.js": 20,
+  "inspector.js": 25,
   "a11y_wasm_bg.wasm": 100,
 };
 

@@ -174,7 +174,7 @@ fehlende Direktive benennt und den Ursprungsfehler als `cause` mitführt.
 ## Bundle-Budget wird im Build erzwungen
 
 Entschieden: Der Build bricht ab, wenn `dist/` die festgelegten Grenzen
-überschreitet — 20 KB gzip für `inspector.js`, 100 KB gzip für das WASM-Modul.
+überschreitet — 25 KB gzip für `inspector.js`, 100 KB gzip für das WASM-Modul.
 
 *Grund:* Ein Budget, das nur berichtet wird, ist keins. Die Größe wächst
 schleichend mit jeder Regel und jedem UI-Detail; ohne Abbruch merkt es niemand,
@@ -190,6 +190,13 @@ Entscheidung erzwungen, und zwar mitten in einer anderen Arbeit — genau dann,
 wenn man sie schlecht trifft. 100 KB lassen Raum für die Tier-3- und
 Tier-4-Regeln, ohne die Grenze wirkungslos zu machen: Sie liegt weiterhin in
 Reichweite, nur nicht im Weg.
+
+*Angehoben am 29.09.2026:* Das JavaScript-Budget von 20 auf 25 KB. Mit
+Scan-Nachweis und Seitengewicht lag `inspector.js` bei 18,8 KB, also 94 % der
+alten Grenze. Die Grenze soll Wachstum sichtbar machen, nicht Funktionen
+verhindern: Ob 20 oder 25 KB, ist für den Einsatz nicht entscheidend — wichtig
+ist, dass jede Anhebung bewusst geschieht. Optimieren oder Weglassen bleibt die
+andere Möglichkeit, wenn eine Erweiterung sie nahelegt.
 
 ## „Inspector-Layer", nicht „Overlay"
 

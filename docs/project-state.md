@@ -280,11 +280,11 @@ Collector. Sie kommt mit der ersten Regel, die sie braucht — Zielgrößen.
 `dist/inspector.js` 53,4 KB roh / **18,8 KB gzip**, `dist/a11y_wasm_bg.wasm`
 168,5 KB roh / **80,9 KB gzip**. Gesamt 99,7 KB gzip (29.09.2026, `a11y-rules`
 0.12.1 über `@casoon/a11y-wasm` 0.2.1). Das JavaScript liegt damit bei
-**94 % seiner Grenze von 20 KB** — das Seitengewicht hat 2,4 KB gekostet, davon
-rund 1,4 KB die Messung selbst, der Rest Tabelle, CSS und Hinweise. Die nächste
-Erweiterung des Layers erzwingt eine sichtbare Entscheidung: Grenze anheben oder
-an anderer Stelle sparen (etwa das CSS, das als Zeichenkette nicht minifiziert
-wird).
+**75 % seiner Grenze von 25 KB** — das Seitengewicht hat 2,4 KB gekostet, davon
+rund 1,4 KB die Messung selbst, der Rest Tabelle, CSS und Hinweise. Die Grenze
+wurde dafür am 29.09.2026 von 20 auf 25 KB angehoben, siehe
+[decisions.md](decisions.md). Sparpotenzial bliebe etwa im CSS, das als
+Zeichenkette nicht minifiziert wird.
 
 Der Zuwachs des WASM von 63,1 auf 79,5 KB verteilt sich auf `a11y-rules` 0.7.0
 (Tier 3 samt Kontrastregeln) und 0.8.0 (neun Strukturregeln: Landmarks,
@@ -304,9 +304,10 @@ einfache Regeln, hier stecken der vollständige `a11y-rules`-Bestand und die
 Namensberechnung aus `accname` drin.
 
 **Das Budget wird im Build erzwungen** — `scripts/bundle.js` bricht ab bei mehr
-als 20 KB gzip für `inspector.js` oder 100 KB gzip für das WASM-Modul. Die
-WASM-Grenze wurde am 19.09.2026 von 80 auf 100 KB angehoben; die Begründung
-steht in [decisions.md](decisions.md). `serde-wasm-bindgen` bleibt damit an der
+als 25 KB gzip für `inspector.js` oder 100 KB gzip für das WASM-Modul. Die
+WASM-Grenze wurde am 19.09.2026 von 80 auf 100 KB angehoben, die für das
+JavaScript am 29.09.2026 von 20 auf 25 KB; die Begründungen stehen in
+[decisions.md](decisions.md). `serde-wasm-bindgen` bleibt damit an der
 Grenze, und der Layer kommt mit, statt nachgeladen zu werden.
 
 ## Was ein „sauberes" Dokument heißt

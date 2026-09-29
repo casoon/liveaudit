@@ -184,7 +184,7 @@ not look like CSP at all.
 
 ### Budget
 
-The build enforces a size budget and fails when it is exceeded: 20 KB gzip for
+The build enforces a size budget and fails when it is exceeded: 25 KB gzip for
 `inspector.js`, 100 KB for the WebAssembly module. A budget that is only reported
 is not a budget.
 

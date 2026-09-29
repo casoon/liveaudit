@@ -20,7 +20,7 @@ The result is two files that belong next to each other:
 - `dist/inspector.js` — 18.8 kB gzipped, the collector, the API and the inspector layer
 - `dist/a11y_wasm_bg.wasm` — 80.9 kB gzipped, the rule engine
 
-The build enforces a size budget and fails when it is exceeded (20 kB for the JavaScript,
+The build enforces a size budget and fails when it is exceeded (25 kB for the JavaScript,
 100 kB for the module). A budget that is only reported is not a budget.
 
 ## Serve
