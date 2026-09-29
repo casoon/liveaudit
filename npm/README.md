@@ -9,49 +9,74 @@ modified.
 
 ## What is in the package
 
-Two files that belong next to each other, plus a source map:
-
 | File | |
 |---|---|
-| `inspector.js` | the collector, the API and the inspector layer |
-| `a11y_wasm_bg.wasm` | the rule engine; `inspector.js` loads it from its own directory |
+| `inspector.js` | the collector, the API and the inspector layer — 19 KB gzipped |
+| `a11y_wasm_bg.wasm` | the rule engine — 81 KB gzipped, loaded from the directory `inspector.js` lives in |
+| `inspector.js.map` | source map |
 
 The rules come from [`a11y-rules`](https://crates.io/crates/a11y-rules) in
 [barrierlab](https://github.com/casoon/barrierlab) — the same rule set that
 drives astro-post-audit at build time and auditmysite in CI, with the same rule
-ids. Which version is bundled stands in the changelog of each release; a change
-to the bundled rules that changes findings is at least a minor version.
+ids. The [changelog](./CHANGELOG.md) names the bundled version for each
+release; a change to it that changes findings is at least a minor version.
 
-## Self-hosted, on purpose
+## Serve it from your own site
 
-Serve both files from your own origin — there is no CDN. A centrally hosted
-script would make someone else's domain a permanent dependency of every page
-that embeds it. Copy them from `node_modules/@casoon/liveaudit/` into your
-public directory at build time, keeping them side by side:
+There is no CDN, on purpose: a centrally hosted script would make someone
+else's domain a permanent dependency of every page that embeds it. Install the
+package and copy the two files into your public directory as part of your
+build, side by side:
+
+```bash
+npm install @casoon/liveaudit
+mkdir -p public/vendor/liveaudit
+cp node_modules/@casoon/liveaudit/inspector.js node_modules/@casoon/liveaudit/a11y_wasm_bg.wasm public/vendor/liveaudit/
+```
 
 ```html
 <script type="module" src="/vendor/liveaudit/inspector.js"></script>
 ```
 
-Updating is then an ordinary dependency update.
+Updating is then an ordinary dependency update. Serve the files as they are —
+running them through a bundler is not tested, and the module finds its
+WebAssembly by its own URL.
 
 ## Nothing happens until you unlock it
 
-Without the flag the script registers nothing, creates no global and loads no
-WebAssembly. Unlock a page with `?liveaudit`, then:
+Without unlocking, the script registers nothing, creates no global and loads no
+WebAssembly. On a page where it is not unlocked, the cost is downloading and
+parsing `inspector.js`; the WebAssembly loads only after unlocking.
+
+Unlock a page with `?liveaudit` in the URL, then use the console or your own UI:
 
 ```js
-await LiveAudit.show();   // scan and draw the inspector layer
-await LiveAudit.watch();  // …and keep it current while the page changes
-LiveAudit.hide();
+await LiveAudit.show();    // scan and draw the inspector layer
+await LiveAudit.watch();   // …and keep it current while the page changes
+LiveAudit.unwatch();       // stop watching; the layer stays
+LiveAudit.hide();          // remove it again
+LiveAudit.remember();      // keep it unlocked on this origin
+LiveAudit.forget();        // and undo that
 ```
 
-Or import it and unlock from your own UI:
+`?liveaudit=0` overrides a remembered unlock for one visit. To unlock from your
+own code instead — a switch on your site, for example — load it on demand:
 
 ```js
 const { enable } = await import("/vendor/liveaudit/inspector.js");
 await enable().watch();
 ```
+
+More of the API: `scan()` returns the findings without drawing anything;
+`show(root, { rendering: true })` adds the contrast pass; `dock("left")` moves
+the sidebar. Full reference: <https://casoon.github.io/liveaudit/docs/getting-started/api/>
+
+## What the sidebar shows
+
+Findings grouped by rule id, each with a marker on its element; the rules that
+could not run and why; what the last scan did (nodes, rules, time); and the
+page weight by type with load timings. Nothing is combined into a score, and
+what cannot be checked or measured is shown as such, never as passed or zero.
 
 ## Content Security Policy
 
@@ -60,9 +85,15 @@ layer adopts its stylesheet instead of inserting a `<style>` element, so a
 strict `style-src 'self'` does not block it and no hash has to change when you
 update.
 
+## Limits
+
+- No TypeScript declarations yet.
+- Tested in Chromium and WebKit.
+
 ## More
 
-Documentation, the live demo and the reasoning behind all of this:
-<https://casoon.github.io/liveaudit/> · source: <https://github.com/casoon/liveaudit>
+Documentation, live demo and the reasoning behind all of this:
+<https://casoon.github.io/liveaudit/> · source:
+<https://github.com/casoon/liveaudit>
 
 MIT.
