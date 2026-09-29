@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clean page</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <!-- Ein Dokument ohne Befund: Genau hier muss der Layer zeigen, dass er
+         gescannt hat, sonst ist „nichts gefunden" von „nicht gelaufen" nicht
+         zu unterscheiden. -->
+    <a href="#content">Skip to content</a>
+    <header><nav aria-label="Main"><a href="/">Home</a></nav></header>
+    <main id="content">
+      <h1>Clean page</h1>
+      <p>Nothing here to find.</p>
+    </main>
+    <footer>Footer</footer>
+
+    <script type="module">
+      import { enable } from "../../../dist/inspector.js";
+
+      enable();
+    </script>
+  </body>
+</html>

@@ -19,6 +19,7 @@ import {
   notRunLabel,
   OUTCOME_ORDER,
   outcomeGloss,
+  type ScanEvidence,
   severityLabel,
   type UntestedScopeEntry,
 } from "./model.ts";
@@ -62,6 +63,28 @@ export interface PanelState {
   dock: DockSide;
   /** Der Live-Modus, sofern das Einstiegspaket ihn angemeldet hat. */
   live: { verfuegbar: boolean; aktiv: boolean };
+  evidence: ScanEvidence;
+}
+
+/**
+ * Der Nachweis, dass gescannt wurde. Die Zählung steht in einer
+ * Statusmeldung; die Uhrzeit liegt bewusst außerhalb, sonst sagte ein
+ * Screenreader im Live-Modus bei jedem Nachscan die Uhrzeit an.
+ */
+function evidenceLine(evidence: ScanEvidence): HTMLElement {
+  const zahl = (n: number): string => n.toLocaleString("en-US");
+  const teile = [
+    `${zahl(evidence.nodes)} nodes scanned`,
+    ...(evidence.documents > 1 ? [`in ${evidence.documents} documents`] : []),
+    `${evidence.rulesRan} rules ran`,
+    ...(evidence.rulesNotRun > 0 ? [`${evidence.rulesNotRun} did not run`] : []),
+  ];
+  const zeit = evidence.scannedAt.toLocaleTimeString("en-GB", { hour12: false });
+  return el("p", { class: "evidence" }, [
+    el("span", { role: "status" }, [teile.join(" · ")]),
+    " · ",
+    el("span", {}, [`last scan ${zeit}`]),
+  ]);
 }
 
 export interface PanelCallbacks {
@@ -154,6 +177,7 @@ export function renderPanel(panel: HTMLElement, state: PanelState, cb: PanelCall
           ]),
         ),
       ),
+      evidenceLine(state.evidence),
     ]),
   );
 
@@ -177,7 +201,9 @@ export function renderPanel(panel: HTMLElement, state: PanelState, cb: PanelCall
   }
   body.append(filters);
 
-  if (state.visible.length === 0) {
+  if (state.items.length === 0) {
+    body.append(el("p", { class: "note" }, ["No findings. The scan ran — see the line above."]));
+  } else if (state.visible.length === 0) {
     body.append(el("p", { class: "note" }, ["No finding in the selected states."]));
   }
 

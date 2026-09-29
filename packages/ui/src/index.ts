@@ -49,6 +49,7 @@ import {
   groupByCategory,
   type Item,
   notRunRules,
+  scanEvidence,
   untestedScopes,
 } from "./model.ts";
 import { STYLES } from "./styles.ts";
@@ -121,6 +122,8 @@ class InspectorLayer {
   private toggle: HTMLButtonElement | null = null;
 
   private result: ScanResult | null = null;
+  /** Wann das angezeigte Ergebnis entstand — im Live-Modus der letzte Nachscan. */
+  private scannedAt = new Date();
   private items: Item[] = [];
   private outcomes = new Set<Outcome>(DEFAULT_OUTCOMES);
   private anchors = new Map<string, Anchor>();
@@ -268,6 +271,7 @@ class InspectorLayer {
     this.applyDock();
 
     this.result = result;
+    this.scannedAt = new Date();
     this.items = buildItems(result);
     this.selected = null;
     this.openPopoverKey = null;
@@ -372,6 +376,7 @@ class InspectorLayer {
           verfuegbar: liveControl !== null,
           aktiv: liveControl?.isActive() ?? false,
         },
+        evidence: scanEvidence(result, this.scannedAt),
       },
       {
         onSelect: (key) => this.select(key, true),

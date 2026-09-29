@@ -192,6 +192,39 @@ export function notRunRules(result: ScanResult): NotRunEntry[] {
   return [...seen.values()].sort((a, b) => a.ruleId.localeCompare(b.ruleId));
 }
 
+/**
+ * Was ein Scan nachweislich getan hat.
+ *
+ * Ohne diesen Nachweis sieht ein Scan ohne Befund aus wie ein Werkzeug, das
+ * nichts tut: vier Nullen und ein leerer Bereich. Knotenzahl, gelaufene Regeln
+ * und Zeitpunkt unterscheiden „geprüft, nichts gefunden" von „nichts geprüft".
+ */
+export interface ScanEvidence {
+  nodes: number;
+  documents: number;
+  rulesRan: number;
+  rulesNotRun: number;
+  scannedAt: Date;
+}
+
+export function scanEvidence(result: ScanResult, scannedAt: Date): ScanEvidence {
+  const ran = new Set<string>();
+  let nodes = 0;
+  for (const scanned of result.documents) {
+    nodes += scanned.nodes;
+    for (const run of scanned.report.rule_runs) {
+      if (run.not_run === undefined) ran.add(run.rule_id);
+    }
+  }
+  return {
+    nodes,
+    documents: result.documents.length,
+    rulesRan: ran.size,
+    rulesNotRun: notRunRules(result).length,
+    scannedAt,
+  };
+}
+
 /** Nicht erreichbare Bereiche — Cross-Origin-Frames und solche, die noch laden. */
 export function untestedScopes(result: ScanResult): UntestedScopeEntry[] {
   const scopes: UntestedScopeEntry[] = [];

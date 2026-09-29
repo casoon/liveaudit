@@ -291,6 +291,14 @@ export const STYLES = `
   font-size: 11.5px;
   line-height: 1.45;
 }
+.evidence {
+  margin: 8px 0 0;
+  color: var(--la-muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+
 .claim {
   margin: 2px 0 12px;
   color: #d4d4d8;
