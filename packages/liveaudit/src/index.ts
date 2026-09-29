@@ -23,10 +23,17 @@ import {
   dock as dockLayer,
   hide as hideLayer,
   isVisible as layerVisible,
+  setOwnResources,
   show as showLayer,
 } from "@liveaudit/ui";
 
 import { forget, isEnabled, remember } from "./gate.ts";
+
+// Bundle und WASM-Modul liegen nebeneinander (siehe scripts/bundle.js) und
+// gehören nicht zur geprüften Seite — beim Seitengewicht zählen sie nicht mit.
+// Nur gemerkt, nicht angewendet: Das ändert nichts an der Seite, auch ohne
+// Freischaltung nicht.
+setOwnResources([import.meta.url, new URL("a11y_wasm_bg.wasm", import.meta.url).href]);
 
 export type { ArenaColumns, Collected, FrameRef } from "@liveaudit/browser/collect";
 export { collect, countNodes, HOST_TAG_NAME } from "@liveaudit/browser/collect";

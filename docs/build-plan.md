@@ -98,6 +98,23 @@ und der Collector ist der Engpass.
 
 ---
 
+## 10 — Seitengewicht gegen gemeinsame Grenzwerte
+
+**Ziel:** Das Seitengewicht nicht nur zeigen, sondern gegen ein Budget halten —
+dasselbe, das auditmysite mit `[budgets]` kennt.
+
+**Vorbedingung:** Die Kategorien und Grenzwerte (`max_js_kb`, `max_css_kb`,
+`max_total_kb`, `max_third_party_kb`, `max_request_count`, LCP, CLS) liegen an
+gemeinsamer Stelle in barrierlab, vermutlich in `web-checks`. LiveAudit misst
+weiter selbst (`packages/browser/src/weight.ts`); geteilt wird, was gemessen
+und wogegen verglichen wird.
+
+**Abnahme:** Dieselbe Seite überschreitet in LiveAudit und auditmysite dieselben
+Grenzen. Eine unbekannte Größe gilt nicht als unter der Grenze — sie macht die
+Aussage für ihre Kategorie unsicher, und das steht dabei.
+
+---
+
 ## Was ausdrücklich nicht in dieses Repository gehört
 
 - **Regeln.** Die gehören nach `a11y-rules`.

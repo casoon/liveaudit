@@ -11,6 +11,12 @@
  */
 
 import type { Outcome } from "@liveaudit/browser/report";
+import {
+  type PageWeight,
+  WEIGHT_CATEGORIES,
+  type WeightBucket,
+  type WeightCategory,
+} from "@liveaudit/browser/weight";
 import { DOCK_SIDES, type DockSide, dockLabel } from "./dock.ts";
 import {
   categoryLabel,
@@ -64,6 +70,9 @@ export interface PanelState {
   /** Der Live-Modus, sofern das Einstiegspaket ihn angemeldet hat. */
   live: { verfuegbar: boolean; aktiv: boolean };
   evidence: ScanEvidence;
+  /** `null`, solange nicht gemessen wurde. */
+  weight: PageWeight | null;
+  weightOpen: boolean;
 }
 
 /**
@@ -93,6 +102,115 @@ export interface PanelCallbacks {
   onClose(): void;
   onDock(side: DockSide): void;
   onToggleLive(an: boolean): void;
+  onToggleWeight(offen: boolean): void;
+}
+
+const WEIGHT_LABEL: Record<WeightCategory, string> = {
+  html: "HTML",
+  css: "CSS",
+  js: "JavaScript / WASM",
+  images: "Images",
+  fonts: "Fonts",
+  media: "Audio / video",
+  other: "Other",
+};
+
+function kb(bytes: number): string {
+  // Unter einem Kilobyte in Bytes: Eine 35-Byte-Datei als „0.0 KB" sähe aus wie keine.
+  if (bytes < 1024) return `${bytes} B`;
+  return `${(bytes / 1024).toLocaleString("en-US", { maximumFractionDigits: 1, minimumFractionDigits: 1 })} KB`;
+}
+
+/** Größe eines Bereichs — unbekannte Größen stehen daneben, nie als 0 darin. */
+function size(bucket: WeightBucket): string {
+  if (bucket.requests === 0) return "—";
+  if (bucket.unknown === bucket.requests) return "unknown";
+  return bucket.unknown > 0 ? `${kb(bucket.bytes)} + ${bucket.unknown} unknown` : kb(bucket.bytes);
+}
+
+function ms(wert: number | undefined): string {
+  return wert === undefined ? "not measured" : `${Math.round(wert).toLocaleString("en-US")} ms`;
+}
+
+/**
+ * Seitengewicht und Ladezeiten, aufklappbar am Ende der Leiste.
+ *
+ * Nur Zahlen, keine Grenzwerte: Ein Budget, gegen das gemessen wird, gehört
+ * mit auditmysites `[budgets]` an eine gemeinsame Stelle, nicht hierher.
+ */
+function weightSection(weight: PageWeight, offen: boolean, cb: PanelCallbacks): HTMLElement {
+  const zeile = (titel: string, anfragen: string, groesse: string, kopf = false) =>
+    el("tr", {}, [
+      el(kopf ? "th" : "td", kopf ? { scope: "row" } : {}, [titel]),
+      el("td", {}, [anfragen]),
+      el("td", {}, [groesse]),
+    ]);
+
+  const zeilen = WEIGHT_CATEGORIES.filter((k) => weight.buckets[k].requests > 0).map((k) =>
+    zeile(WEIGHT_LABEL[k], String(weight.buckets[k].requests), size(weight.buckets[k])),
+  );
+  if (weight.inline.css > 0)
+    zeilen.push(zeile("Inline CSS (part of HTML)", "—", kb(weight.inline.css)));
+  if (weight.inline.js > 0)
+    zeilen.push(zeile("Inline JS (part of HTML)", "—", kb(weight.inline.js)));
+
+  const tabelle = el("table", { class: "weight-table" }, [
+    el("caption", { class: "sr-only" }, ["Page weight by type"]),
+    el("thead", {}, [
+      el("tr", {}, [
+        el("th", { scope: "col" }, ["Type"]),
+        el("th", { scope: "col" }, ["Requests"]),
+        el("th", { scope: "col" }, ["Size"]),
+      ]),
+    ]),
+    el("tbody", {}, zeilen),
+    el("tfoot", {}, [
+      zeile("Total", String(weight.total.requests), size(weight.total), true),
+      zeile("Other origins", String(weight.thirdParty.requests), size(weight.thirdParty), true),
+    ]),
+  ]);
+
+  const t = weight.timings;
+  const zeiten = el("dl", { class: "weight-dl" }, [
+    el("dt", {}, ["Time to first byte"]),
+    el("dd", {}, [ms(t.ttfb)]),
+    el("dt", {}, ["DOM content loaded"]),
+    el("dd", {}, [ms(t.domContentLoaded)]),
+    el("dt", {}, ["Load"]),
+    el("dd", {}, [ms(t.load)]),
+    el("dt", {}, ["Largest contentful paint"]),
+    el("dd", {}, [ms(t.lcp)]),
+    el("dt", {}, ["Cumulative layout shift"]),
+    el("dd", {}, [t.cls === undefined ? "not measured" : t.cls.toFixed(3)]),
+  ]);
+
+  const hinweise = [
+    "Sizes are compressed, as delivered. Only what has loaded so far is counted — an image that loads on scroll appears once it is there.",
+    ...(weight.total.unknown > 0
+      ? [
+          `${weight.total.unknown} request${weight.total.unknown === 1 ? "" : "s"} from other origins do not expose their size (no Timing-Allow-Origin) — shown as unknown, not as zero.`,
+        ]
+      : []),
+    ...(weight.bufferFull
+      ? ["The browser's resource list is full (250 entries) — some requests may be missing."]
+      : []),
+    ...(weight.excluded > 0 ? ["LiveAudit's own files are not counted."] : []),
+    "Timings are from this visit in this browser — orientation, not a lab measurement.",
+  ];
+
+  const details = el("details", { class: "group weight" }, [
+    el("summary", {}, [
+      el("h3", { id: "liveaudit-group-weight" }, [
+        `Page weight — ${kb(weight.total.bytes)} · ${weight.total.requests} requests`,
+      ]),
+    ]),
+    tabelle,
+    zeiten,
+    ...hinweise.map((text) => el("p", { class: "note" }, [text])),
+  ]) as HTMLDetailsElement;
+  details.open = offen;
+  details.addEventListener("toggle", () => cb.onToggleWeight(details.open));
+  return details;
 }
 
 /**
@@ -288,6 +406,8 @@ export function renderPanel(panel: HTMLElement, state: PanelState, cb: PanelCall
       ]),
     );
   }
+
+  if (state.weight !== null) body.append(weightSection(state.weight, state.weightOpen, cb));
 }
 
 /** Was eine Messung am Ankerpunkt über die Sichtbarkeit des Elements sagt. */

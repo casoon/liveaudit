@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Page weight</title>
+    <link rel="icon" href="data:," />
+    <!-- Je eine Datei pro Kategorie, damit die Zählung im Test eindeutig ist. -->
+    <link rel="stylesheet" href="gewicht.css" />
+    <script src="gewicht.js"></script>
+  </head>
+  <body>
+    <a href="#content">Skip to content</a>
+    <header><nav aria-label="Main"><a href="/">Home</a></nav></header>
+    <main id="content">
+      <h1>Page weight</h1>
+      <img src="gewicht.svg" alt="A blue rectangle" width="120" height="80" />
+    </main>
+    <footer>Footer</footer>
+
+    <script type="module">
+      import { enable } from "../../../dist/inspector.js";
+
+      enable();
+    </script>
+  </body>
+</html>

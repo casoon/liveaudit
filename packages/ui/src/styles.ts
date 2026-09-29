@@ -299,6 +299,52 @@ export const STYLES = `
   font-variant-numeric: tabular-nums;
 }
 
+.weight summary {
+  cursor: pointer;
+}
+
+.weight summary h3 {
+  display: inline;
+}
+
+.weight-table {
+  width: 100%;
+  margin: 8px 0;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.weight-table th,
+.weight-table td {
+  padding: 3px 6px 3px 0;
+  text-align: left;
+  border-bottom: 1px solid #3f3f46;
+}
+
+.weight-table td:not(:first-child),
+.weight-table th[scope="col"]:not(:first-child) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.weight-table tfoot th,
+.weight-table tfoot td {
+  font-weight: 700;
+}
+
+.weight-dl {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 12px;
+  margin: 8px 0;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.weight-dl dt { color: var(--la-muted); }
+.weight-dl dd { margin: 0; text-align: right; white-space: nowrap; }
+
 .claim {
   margin: 2px 0 12px;
   color: #d4d4d8;

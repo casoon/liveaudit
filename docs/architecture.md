@@ -33,7 +33,7 @@ eigenes CLI gehört deshalb nicht in dieses Repository.
 ```
 liveaudit/
 packages/
-├── browser/    TypeScript: Collector, Scan, Element-Identität
+├── browser/    TypeScript: Collector, Scan, Element-Identität, Seitengewicht
 ├── ui/         TypeScript + CSS: Inspector-Layer
 └── liveaudit/  TypeScript: Freischaltung und öffentliche API
 ```
@@ -223,6 +223,20 @@ Vier Darstellungsvarianten:
    Tab-Reihenfolge, inkl. Auflistung der `tabindex`-Werte, um Fälle wie
    `tabindex="4"` neben `tabindex="12"` oder unsichtbare fokussierbare Elemente
    sichtbar zu machen. **Braucht Tier 4 und ist nicht gebaut.**
+
+## Nachweis und Seitengewicht
+
+Unter den Zählern der Seitenleiste steht, was der Scan getan hat — Knoten,
+gelaufene und nicht gelaufene Regeln, Zeitpunkt —, damit „geprüft, nichts
+gefunden" von „nicht gelaufen" zu unterscheiden ist.
+
+Am Ende der Leiste steht aufklappbar das Seitengewicht. Es kommt nicht aus
+`a11y-rules`, sondern aus den Messwerten des Browsers:
+`packages/browser/src/weight.ts` liest Resource und Navigation Timing sowie
+die gepufferten LCP- und Layout-Shift-Einträge. Gemessen wird in `show()` des
+Layers, also bei jedem neuen Ergebnis. Das Einstiegspaket meldet die eigenen
+Dateien (`import.meta.url` und das WASM-Modul daneben) an, damit sie nicht
+mitzählen.
 
 ## Live-Modus
 

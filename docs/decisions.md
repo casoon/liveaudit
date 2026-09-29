@@ -331,6 +331,28 @@ nicht Endnutzer.
 *Konsequenz:* Neue UI-Texte werden englisch geschrieben. Browsertests, die
 Beschriftungen prüfen, halten sich an dieselben Zeichenketten.
 
+## Seitengewicht: Zahlen ohne Grenzwerte, unbekannt statt null
+
+Entschieden: Die Seitenleiste zeigt Seitengewicht und Ladezeiten als Messwerte —
+Anfragen und komprimierte Größe je Art, Summe, Anteil anderer Herkünfte, TTFB,
+DOMContentLoaded, Load, LCP, CLS. **Keine Grenzwerte, kein Urteil, kein Score.**
+Was der Browser nicht preisgibt, steht als „unknown" bzw. „not measured" da,
+nie als 0.
+
+*Grund:* Eine Größe, die als 0 in die Summe geht, weil ein fremder Server sie
+nicht verrät, macht die Summe zu klein und sieht nach einem Ergebnis aus — das
+ist dieselbe Falle wie ein nicht gelaufener Check, der als bestanden gilt.
+Grenzwerte gibt es bereits in auditmysite (`[budgets]`: `max_js_kb`,
+`max_total_kb`, `max_third_party_kb`, LCP, CLS …). Ein zweiter, eigener Satz
+hier hieße, dass „JS-Budget" in zwei Werkzeugen Verschiedenes bedeutet.
+
+*Konsequenz:*
+- Grenzwerte kommen erst, wenn es sie an gemeinsamer Stelle gibt (barrierlab),
+  und gelten dann für beide Werkzeuge gleich — siehe
+  [build-plan.md](build-plan.md).
+- Das Seitengewicht ist kein Barrierefreiheitsbefund und erscheint nicht als
+  Finding, sondern als eigener Abschnitt.
+
 ## Der eigene Host bleibt aus dem Scan
 
 Entschieden: Der Collector überspringt jedes Element mit dem Tagnamen

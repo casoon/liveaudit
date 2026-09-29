@@ -33,6 +33,13 @@ document and rescans **only the changed subtree**, 200 ms after the last
 mutation — collecting the DOM is the measured bottleneck, so a full rescan per
 mutation would be felt on any page that moves.
 
+**The sidebar shows its own evidence and the page weight.** Below the counts it
+says what the last scan did — nodes scanned, rules that ran, the time — so a
+clean page reads as checked, not as idle. A collapsible section lists page
+weight by type (HTML, CSS, JavaScript/WASM, images, fonts, media) with totals,
+other origins and timings (TTFB, DOMContentLoaded, load, LCP, CLS). Sizes the
+browser does not expose are shown as unknown, never as zero.
+
 There is a live demo on the [project page](https://casoon.github.io/liveaudit/):
 press one button and the layer appears over the documentation site itself.
 
@@ -51,6 +58,7 @@ size.
 | Delivery model — CSP, gating, bundle budget | **done** — see below |
 | Tier 3 — contrast | **done** — opt-in pass, see above |
 | Live mode — rescan on mutation | **done** — changed subtree only |
+| Page weight — size by type, timings | **done** — numbers only, thresholds open |
 | Tier 4 — focus order, target size, reflow | open |
 | npm package | open — build it from this repository for now |
 

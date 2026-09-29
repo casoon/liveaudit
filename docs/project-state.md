@@ -14,7 +14,7 @@ Das Script lädt die WASM-Analyse-Engine selbst nach und zeigt Befunde direkt au
 der untersuchten Seite an (Inspector-Layer), statt einen externen Report zu
 erzeugen — das ist der Unterschied zu Lighthouse/klassischen Scan-Reports.
 
-## Status (28.09.2026)
+## Status (29.09.2026)
 
 **LiveAudit ist veröffentlicht.** Das Repository liegt öffentlich unter
 [github.com/casoon/liveaudit](https://github.com/casoon/liveaudit) unter MIT, die
@@ -34,6 +34,11 @@ Befundtexte aus `a11y-rules`. Der Kern kann seit 0.12 auch Deutsch, aber nur mit
 dem Feature `de`; `@casoon/a11y-wasm` baut ohne es, die deutschen Texte kommen
 also gar nicht erst in das ausgelieferte Modul. Code, Kommentare und diese Doku
 bleiben deutsch; die Regel steht in [decisions.md](decisions.md).
+
+**Die Seitenleiste weist nach, dass gescannt wurde**, und zeigt das
+**Seitengewicht** — beides weiter unten. Ohne den Nachweis sah ein Scan ohne
+Befund aus wie ein Werkzeug, das nicht lief; aufgefallen auf geographia.eu, das
+LiveAudit über einen eigenen Schalter einbindet.
 
 Die Beispielseiten rufen **`enable()`** und umgehen das Flag damit bewusst —
 sie sind der programmgesteuerte Fall aus [decisions.md](decisions.md). Ein
@@ -272,10 +277,14 @@ Collector. Sie kommt mit der ersten Regel, die sie braucht — Zielgrößen.
 
 ## Bundle-Größe
 
-`dist/inspector.js` 46,1 KB roh / **16,1 KB gzip**, `dist/a11y_wasm_bg.wasm`
-168,5 KB roh / **80,9 KB gzip**. Gesamt 97,0 KB gzip (28.09.2026, `a11y-rules`
+`dist/inspector.js` 53,4 KB roh / **18,8 KB gzip**, `dist/a11y_wasm_bg.wasm`
+168,5 KB roh / **80,9 KB gzip**. Gesamt 99,7 KB gzip (29.09.2026, `a11y-rules`
 0.12.1 über `@casoon/a11y-wasm` 0.2.1). Das JavaScript liegt damit bei
-**81 % seiner Grenze von 20 KB**.
+**94 % seiner Grenze von 20 KB** — das Seitengewicht hat 2,4 KB gekostet, davon
+rund 1,4 KB die Messung selbst, der Rest Tabelle, CSS und Hinweise. Die nächste
+Erweiterung des Layers erzwingt eine sichtbare Entscheidung: Grenze anheben oder
+an anderer Stelle sparen (etwa das CSS, das als Zeichenkette nicht minifiziert
+wird).
 
 Der Zuwachs des WASM von 63,1 auf 79,5 KB verteilt sich auf `a11y-rules` 0.7.0
 (Tier 3 samt Kontrastregeln) und 0.8.0 (neun Strukturregeln: Landmarks,
@@ -327,6 +336,41 @@ nur über Linktext und Klassennamen erraten.
 - Tests: `node --test` mit **jsdom** für Collector
   und Scan, **Playwright** für den Inspector-Layer — siehe unten. Der
   Arena-Adapter wird in `@casoon/a11y-wasm` getestet, nicht hier.
+
+## Nachweis des Scans
+
+Unter den vier Zählern steht, was der letzte Scan getan hat: „42 nodes scanned ·
+39 rules ran · 2 did not run · last scan 19:54:52", bei Frames zusätzlich die
+Zahl der Dokumente. Im Live-Modus zeigt die Uhrzeit, dass nachgescannt wird.
+Ohne Befund steht „No findings. The scan ran" statt des Filtersatzes „No finding
+in the selected states", der nur noch kommt, wenn Befunde ausgeblendet sind.
+
+Die Zählung ist eine Statusmeldung (`role="status"`), die Uhrzeit liegt bewusst
+außerhalb — sonst sagte ein Screenreader im Live-Modus bei jedem Nachscan die
+Zeit an. `scanEvidence()` in `packages/ui/src/model.ts`.
+
+## Seitengewicht
+
+`packages/browser/src/weight.ts` liest die Messwerte des Browsers (Resource und
+Navigation Timing) und zeigt sie als aufklappbaren Abschnitt am Ende der Leiste:
+Anfragen und Größe je Art — HTML, CSS, JavaScript/WASM, Bilder, Fonts, Audio/Video,
+Sonstiges —, Inline-CSS und -JS (als Teil des HTML, nicht doppelt gezählt),
+Summe, Anteil anderer Herkünfte, dazu TTFB, DOMContentLoaded, Load, LCP und CLS.
+
+- **Größe ist die komprimierte Body-Größe** (`encodedBodySize`). Sie bleibt bei
+  einem Cache-Treffer erhalten, die übertragene Größe wäre dann 0.
+- **Unbekannt statt null.** Dateien fremder Herkunft ohne `Timing-Allow-Origin`
+  melden keine Größe; sie stehen als „unknown" neben der Summe, nicht als 0 in ihr.
+- **Nur Geladenes zählt**, ein voller Puffer (250 Einträge) wird ausgewiesen,
+  LCP und CLS stehen dort auf „not measured", wo der Browser sie nicht misst.
+- **LiveAudit rechnet sich heraus**: Bundle und WASM-Modul meldet das
+  Einstiegspaket über `import.meta.url` an den Layer.
+- **Nur Zahlen, keine Grenzwerte.** Ein Budget, gegen das gemessen wird, teilt
+  sich LiveAudit mit auditmysites `[budgets]` — das gehört an eine gemeinsame
+  Stelle, siehe [build-plan.md](build-plan.md).
+
+Gemessen wird bei jedem neuen Ergebnis, im Live-Modus also mit jedem Nachscan —
+ein Bild, das beim Scrollen nachlädt, erscheint dann.
 
 ## Live-Modus
 
@@ -385,7 +429,7 @@ Bis zum 20.09.2026 war er deshalb von Hand über eine Schaltfläche in
 `examples/inspector.html` gemessen. Das ist keine Regressionsprüfung: Es fällt
 nur auf, wenn jemand hinsieht.
 
-`pnpm test:browser` fährt jetzt 29 Fälle in `tests/browser/` gegen Chromium:
+`pnpm test:browser` fährt jetzt 33 Fälle in `tests/browser/` gegen Chromium:
 
 | Datei | Prüft |
 |---|---|
@@ -395,6 +439,8 @@ nur auf, wenn jemand hinsieht.
 | `kontrast.spec.ts` | Hintergrund an Shadow-Grenzen und am Slot, dazu die fünf bekannten Fälle aus `examples/contrast.html` als Regressionsschutz |
 | `live.spec.ts` | Der Layer läuft mit: Element dazu, Element weg, Befund behoben, Nachbarbefund unberührt, `unwatch()` beendet es |
 | `regeln-ohne-lauf.spec.ts` | Die Gruppe der Regeln ohne Lauf nennt die Tier-3-Kennungen samt Grund, und verschwindet, sobald der Durchgang lief |
+| `nachweis.spec.ts` | Ein Dokument ohne Befund zeigt Knoten, gelaufene Regeln und Zeitpunkt; ausgefilterte Befunde behalten den Filterhinweis |
+| `gewicht.spec.ts` | Je eine Datei pro Art wird gezählt, LiveAudits eigene Dateien nicht; Chromium liefert LCP; der aufgeklappte Abschnitt bleibt beim Neuzeichnen offen |
 
 Die Fälle laufen gegen `examples/inspector.html` und eine eigene Fixture unter
 `tests/browser/fixtures/`. Der Cross-Origin-Rahmen des Beispiels wird
@@ -406,7 +452,7 @@ greifen: `pointer-events: auto` am Host lässt die Host-Zusicherung und den Klic
 neben dem Layer fallen, eine entfernte Fokusrückgabe genau den Fokusfall — und
 sonst nichts.
 
-**Chromium und WebKit laufen beide durch** (29 von 29, ohne Anpassung am Test).
+**Chromium und WebKit laufen beide durch** (33 von 33, zuletzt am 29.09.2026, ohne Anpassung am Test).
 **Firefox startet auf dieser Maschine nicht**: „Could not find profile folder",
 auch nach `playwright install --force firefox` und außerhalb der Sandbox. Das
 ist ein Einrichtungsproblem, kein Befund am Layer — die Projekte sind

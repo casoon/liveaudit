@@ -25,6 +25,7 @@
 
 import type { Outcome } from "@liveaudit/browser/report";
 import type { ScanResult } from "@liveaudit/browser/scan";
+import { measureWeight, type PageWeight } from "@liveaudit/browser/weight";
 import {
   clampSize,
   type DockSide,
@@ -124,6 +125,15 @@ class InspectorLayer {
   private result: ScanResult | null = null;
   /** Wann das angezeigte Ergebnis entstand — im Live-Modus der letzte Nachscan. */
   private scannedAt = new Date();
+  /** Seitengewicht zum angezeigten Ergebnis, gemessen mit ihm. */
+  private weight: PageWeight | null = null;
+  private weightOpen = false;
+  /** Dateien von LiveAudit selbst — zählen nicht zum Seitengewicht. */
+  private own: readonly string[] = [];
+
+  setOwnResources(urls: readonly string[]): void {
+    this.own = urls;
+  }
   private items: Item[] = [];
   private outcomes = new Set<Outcome>(DEFAULT_OUTCOMES);
   private anchors = new Map<string, Anchor>();
@@ -272,6 +282,7 @@ class InspectorLayer {
 
     this.result = result;
     this.scannedAt = new Date();
+    this.weight = measureWeight(window, this.own);
     this.items = buildItems(result);
     this.selected = null;
     this.openPopoverKey = null;
@@ -377,6 +388,8 @@ class InspectorLayer {
           aktiv: liveControl?.isActive() ?? false,
         },
         evidence: scanEvidence(result, this.scannedAt),
+        weight: this.weight,
+        weightOpen: this.weightOpen,
       },
       {
         onSelect: (key) => this.select(key, true),
@@ -392,6 +405,11 @@ class InspectorLayer {
           // Ein Einschalten scannt neu und zeichnet den Layer ohnehin neu; ein
           // Ausschalten muss die Beschriftung selbst nachziehen.
           if (!an) this.render();
+        },
+        // Nur merken, nicht neu zeichnen: Der Abschnitt öffnet und schließt
+        // sich selbst, ein Neuzeichnen nähme den Fokus vom Aufklapper.
+        onToggleWeight: (offen) => {
+          this.weightOpen = offen;
         },
       },
     );
@@ -679,6 +697,14 @@ export function show(result: ScanResult, dock?: DockSide): void {
 }
 
 /** Die angedockte Kante wechseln, ohne neu zu scannen. */
+/**
+ * Die URLs von LiveAudit selbst — Bundle und WASM-Modul. Sie werden beim
+ * Seitengewicht herausgerechnet; sie gehören nicht zur geprüften Seite.
+ */
+export function setOwnResources(urls: readonly string[]): void {
+  layer.setOwnResources(urls);
+}
+
 export function dock(side: DockSide): void {
   layer.setDock(side);
 }
