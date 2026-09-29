@@ -157,6 +157,17 @@ ohne dass Endnutzer je etwas bemerken.
 - Das WASM-Modul lädt ohnehin erst bei `init()`, der Layer erst bei `show()`.
 - Wer das Werkzeug programmgesteuert einsetzt (Tests, eigene Oberfläche), ruft
   `enable()` auf und umgeht das Flag bewusst.
+- **Das Paket heißt `@casoon/liveaudit`** und trägt die gebauten Dateien, nicht
+  die Quellen: `inspector.js`, `a11y_wasm_bg.wasm`, Source Map, Lizenz. Es liegt
+  in `npm/`, außerhalb des Workspaces; `prepublishOnly` baut und kopiert, im
+  Repository liegt keine Kopie. Wer es einsetzt, kopiert die beiden Dateien beim
+  Build aus `node_modules` — Updates kommen als gewöhnliches
+  Abhängigkeits-Update, statt als eingecheckte Kopie zu veralten.
+- **Version und Regelbestand:** LiveAudit versioniert eigenständig. Ändert sich
+  mit dem gebündelten `@casoon/a11y-wasm` ein Befund, ist das mindestens eine
+  Minor-Version; welcher `a11y-rules`-Stand gebündelt ist, steht im Changelog
+  der Version. Eine Regelmenge, die sich unter gleicher Paketversion ändert,
+  machte Befunde unvergleichbar.
 
 ## Strikte CSP wird erkannt, nicht stillschweigend hingenommen
 

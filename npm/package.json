@@ -1,0 +1,36 @@
+{
+  "name": "@casoon/liveaudit",
+  "version": "0.1.0",
+  "description": "Embedded accessibility inspector: findings on the affected element, in the page as it actually runs. It inspects, it does not repair.",
+  "license": "MIT",
+  "type": "module",
+  "homepage": "https://casoon.github.io/liveaudit/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/casoon/liveaudit.git",
+    "directory": "npm"
+  },
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "wcag",
+    "inspector",
+    "webassembly"
+  ],
+  "exports": {
+    ".": "./inspector.js",
+    "./inspector.js": "./inspector.js",
+    "./a11y_wasm_bg.wasm": "./a11y_wasm_bg.wasm",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "inspector.js",
+    "inspector.js.map",
+    "a11y_wasm_bg.wasm",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "prepublishOnly": "cd .. && pnpm build && cp dist/inspector.js dist/inspector.js.map dist/a11y_wasm_bg.wasm LICENSE npm/"
+  }
+}

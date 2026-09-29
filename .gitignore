@@ -5,6 +5,11 @@ dist/
 site/public/demo/inspector.js
 site/public/demo/a11y_wasm_bg.wasm
 site/dist/
+# Von npm/package.json (prepublishOnly) aus dist/ kopiert.
+npm/inspector.js
+npm/inspector.js.map
+npm/a11y_wasm_bg.wasm
+npm/LICENSE
 # Playwright: Spuren und Bericht eines Laufs.
 test-results/
 playwright-report/

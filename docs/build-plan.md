@@ -76,9 +76,10 @@ Rule-IDs. Eine Abweichung ist ein Fehlschlag, keine Eigenheit der Oberfläche.
 **Vorgabe aus [decisions.md](decisions.md):** npm-Paket statt CDN. Kein zentral
 gehostetes Script, auch nicht als Bequemlichkeitsvariante.
 
-**Zu entscheiden beim Bau:** welches der vier Pakete veröffentlicht wird und wie
-seine Version an die Versionen von `a11y-rules` gebunden ist — eine Regelmenge,
-die sich unter gleicher Paketversion ändert, macht Befunde unvergleichbar.
+**Stand 29.09.2026: gebaut, Veröffentlichung von 0.1.0 steht aus.** Das Paket
+heißt `@casoon/liveaudit`, liegt in `npm/` und trägt die gebauten Dateien; die
+Versionsregel steht in [decisions.md](decisions.md). Offen bleibt nur der
+`npm publish` — er braucht ein Einmal-Passwort.
 
 **Abnahme:** Installation plus Kopieren der beiden Dateien in ein fremdes
 Projekt ergibt einen lauffähigen Inspector, ohne dass dort Rust vorhanden sein
