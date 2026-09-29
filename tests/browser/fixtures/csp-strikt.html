@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Streng wie auf Seiten, die Stile nur mit Hash zulassen: kein
+         'unsafe-inline', WebAssembly erlaubt. Der Layer muss trotzdem gestylt
+         sein, ohne dass die Seite einen Hash für ihn nachträgt. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Strict CSP</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <main><h1>Strict CSP</h1><img src="gewicht.svg" width="120" height="80" /></main>
+    <script type="module" src="csp-strikt.js"></script>
+  </body>
+</html>

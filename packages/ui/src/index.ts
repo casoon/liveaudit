@@ -57,6 +57,26 @@ import { STYLES } from "./styles.ts";
 import { el, renderPanel, renderPopover, type Visibility } from "./views.ts";
 
 /**
+ * Das Stylesheet des Layers — einmal gebaut, im Shadow Root übernommen.
+ *
+ * Kein `<style>`-Element: Eine Seite mit strenger CSP (`style-src` ohne
+ * `'unsafe-inline'`) ließe es nur mit Hash zu, und der Hash änderte sich mit
+ * jeder Version des Layers — wer LiveAudit einbindet, müsste ihn bei jedem
+ * Update nachtragen. Ein über `adoptedStyleSheets` übernommenes Stylesheet
+ * fällt nicht unter `style-src` (gemessen in Chromium am 29.09.2026, geprüft in
+ * `tests/browser/csp.spec.ts`).
+ */
+let blatt: CSSStyleSheet | null = null;
+
+function stylesheet(): CSSStyleSheet {
+  if (blatt === null) {
+    blatt = new CSSStyleSheet();
+    blatt.replaceSync(STYLES);
+  }
+  return blatt;
+}
+
+/**
  * Was das Einstiegspaket anmeldet, damit die Seitenleiste einen Schalter für
  * den Live-Modus zeigen kann.
  *
@@ -238,7 +258,7 @@ class InspectorLayer {
 
     if (this.root === null || this.root.parentNode !== shadow) {
       shadow.replaceChildren();
-      shadow.append(el("style", {}, [STYLES]));
+      shadow.adoptedStyleSheets = [stylesheet()];
 
       this.layer = el("div", { class: "layer" });
       this.panel = el("aside", {

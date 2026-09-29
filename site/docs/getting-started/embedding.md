@@ -59,3 +59,7 @@ Content-Security-Policy: script-src 'self' 'wasm-unsafe-eval'
 Without it, `init()` throws an error that names the missing directive, with the original
 failure attached as `cause`. Browsers report this differently — a `CompileError` here, a
 `TypeError` there — and none of them says "CSP" on its own.
+
+No hash for styles is needed: the layer adopts its stylesheet through `adoptedStyleSheets`
+rather than a `<style>` element, so a strict `style-src 'self'` does not block it, and nothing
+in your policy has to change when LiveAudit is updated.

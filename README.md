@@ -182,6 +182,11 @@ Without it, `init()` throws an error naming the missing directive, with the
 original failure attached as `cause` — rather than failing in a way that does
 not look like CSP at all.
 
+**No style hash needed.** The layer adopts its stylesheet through
+`adoptedStyleSheets` instead of a `<style>` element, so a strict
+`style-src 'self'` does not block it and nothing has to be updated in your CSP
+when LiveAudit changes.
+
 ### Budget
 
 The build enforces a size budget and fails when it is exceeded: 25 KB gzip for

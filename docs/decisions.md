@@ -171,6 +171,14 @@ an der falschen Stelle.
 *Konsequenz:* `init()` fängt den Fehlschlag ab und wirft einen Fehler, der die
 fehlende Direktive benennt und den Ursprungsfehler als `cause` mitführt.
 
+**Stile brauchen keinen Hash.** Der Layer übernimmt sein Stylesheet über
+`adoptedStyleSheets`, nicht als `<style>`-Element. Ein `<style>` im Shadow Root
+fiele unter `style-src` und verlangte auf Seiten ohne `'unsafe-inline'` einen
+Hash, der sich mit jeder Version des Layers ändert — jede Einbindung müsste ihn
+bei jedem Update nachtragen (geographia.eu tat genau das). Übernommene
+Stylesheets fallen nicht unter `style-src`; `tests/browser/csp.spec.ts` hält das
+unter `style-src 'self'` fest, gegengeprüft mit dem alten `<style>`.
+
 ## Bundle-Budget wird im Build erzwungen
 
 Entschieden: Der Build bricht ab, wenn `dist/` die festgelegten Grenzen
