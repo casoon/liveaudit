@@ -1,6 +1,6 @@
 {
   "name": "@casoon/liveaudit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Embedded accessibility inspector: findings on the affected element, in the page as it actually runs. It inspects, it does not repair.",
   "license": "MIT",
   "type": "module",

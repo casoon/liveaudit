@@ -17,8 +17,9 @@ export default defineConfig({
       // a build-time showcase holds for other projects.
       demo: "Demo",
       showcase: false,
-      // Nothing is released yet; a changelog would have nothing to list.
-      changelog: false,
+      // The published package keeps its changelog next to it; each release names
+      // the bundled rule set there.
+      changelog: "../npm/CHANGELOG.md",
       // docs/ in this repository is internal living documentation (project-state,
       // decisions, constraints). What is published lives in site/docs/.
       docsDir: "site/docs",

@@ -12,8 +12,8 @@ declares what it needs, and the host declares what it can serve.
 | --- | --- | --- |
 | 1 | Read the tree: elements, attributes, text | `images/alt-missing` |
 | 2 | Compute accessible name and role | `links/ambiguous-name` |
-| 3 | Report computed styles and geometry | `contrast/text-insufficient` |
-| 4 | Observe interaction: focus order, live regions | not built yet |
+| 3 | Report computed styles and geometry | `contrast/text-insufficient`, `targets/size` |
+| 4 | Observe interaction: focus order, live regions | only focus visibility, as an opt-in pass |
 
 If the host does not serve a rule's tier, the rule does not run — and the report says so,
 with the reason, instead of passing it or saying nothing at all. That is the fact this project
@@ -30,11 +30,28 @@ background behind each text node by walking its ancestors, with a memo per eleme
 that memo the walk repeats over the same ancestors and becomes the single largest cost of a
 scan.
 
-Geometry is not collected yet. `getBoundingClientRect()` per node costs about as much as the
-entire collector, and no rule in the current set needs it. It arrives with the first one that
-does — target sizes.
+The same pass collects what the heuristic rules need: `flex-direction`, `order`,
+`min-width`, `cursor` and `position` from the style it already read, running animations once
+per scan, and geometry — but only for controls. `getBoundingClientRect()` per node would cost
+about as much as the entire collector. These rules suspect rather than prove, so they answer
+`REVIEW`, never `FAIL`: CSS that reorders focusable content, endless animation without a pause
+control, `min-width` above 320 px, elements that look clickable but have no role, controls
+covered by fixed bars or bars deeper than `scroll-padding-top`, and targets under 24 × 24 px
+that also miss the spacing exception.
 
-Tier 4 is not built.
+Of tier 4 there is one piece: focus visibility, via `{ rendering: true, focus: true }`. It
+focuses each control once, compares its style, and restores focus — the one pass that changes
+the page's state, so it only runs when asked. Without it, focus visibility is reported as
+`UNTESTED`. Focus order is not built.
+
+## What a rule sees
+
+Content that is hidden is out of scope. Each rule declares whether it looks at the
+accessibility tree (the default: nothing under `aria-hidden="true"`, nothing that is not
+rendered), at what is rendered (keyboard and contrast rules — being focusable under
+`aria-hidden` *is* the finding), or at the whole markup (document-wide rules and ID
+references, since `aria-labelledby` may point at hidden text). Without the rendering pass,
+"not rendered" can only be read from the `hidden` attribute.
 
 ## When the background cannot be reduced to a colour
 

@@ -14,13 +14,14 @@ Das Script lädt die WASM-Analyse-Engine selbst nach und zeigt Befunde direkt au
 der untersuchten Seite an (Inspector-Layer), statt einen externen Report zu
 erzeugen — das ist der Unterschied zu Lighthouse/klassischen Scan-Reports.
 
-## Status (29.09.2026)
+## Status (30.09.2026)
 
 **LiveAudit ist veröffentlicht.** Das Repository liegt öffentlich unter
 [github.com/casoon/liveaudit](https://github.com/casoon/liveaudit) unter MIT, die
 Projektseite läuft auf <https://casoon.github.io/liveaudit/>. Seit 29.09.2026
 steht es als [`@casoon/liveaudit`](https://www.npmjs.com/package/@casoon/liveaudit)
-0.1.0 auf npm — die gebauten Dateien aus `npm/`, zum Selbsthosten.
+0.1.0 auf npm, seit 30.09.2026 in 0.2.0 mit `a11y-rules` 0.13.0 — die gebauten
+Dateien aus `npm/`, zum Selbsthosten.
 
 **LiveAudit ist lauffähig und auslieferbar.** Alle fünf Schritte aus
 [build-plan.md](build-plan.md) sind gebaut: `pnpm build` erzeugt

@@ -4,7 +4,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Each release
 names the bundled rule set; a change to it that changes findings is at least a
 minor version.
 
-## [Unreleased]
+## [0.2.0] - 2026-09-30
 
 **Bundled rules:** `@casoon/a11y-wasm` 0.3.0, built on `a11y-rules` 0.13.0.
 

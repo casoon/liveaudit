@@ -26,6 +26,15 @@ alone.
 There is no third "certainty" axis. A rule that can only guess returns `REVIEW` — not `FAIL`
 with low confidence. The moment certainty becomes a number, it becomes something to average.
 
+## The checklist
+
+Some criteria no machine can decide: whether a video needs captions and has them, whether an
+`alt` text fits the image — or whether `alt=""` really marks it as decorative, whether bold
+text is secretly a heading, whether colour is the only cue, whether a time limit can be
+extended, whether errors are explained. For these, a page gets one `UNTESTED` item per
+criterion under `manual/*` as soon as it contains something the criterion applies to. It shows
+up on a flawless page too — that is the list of what still needs a person.
+
 ## "Did not run" is not "passed"
 
 Every rule leaves an execution record. A contrast check without rendering access reads like a
