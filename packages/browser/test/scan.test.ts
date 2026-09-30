@@ -57,7 +57,11 @@ describe("Regelbestand über der Arena", () => {
       </body></html>`);
 
     const report = scan(doc.documentElement).documents[0]?.report;
-    assert.deepEqual(ruleIds(report as { findings: { rule_id: string }[] }), new Set());
+    // Außer der Checkliste: Was keine Maschine entscheiden kann, bleibt auch
+    // auf einem einwandfreien Dokument als UNTESTED stehen.
+    const urteile = report?.findings.filter((f) => !f.rule_id.startsWith("manual/")) ?? [];
+    assert.deepEqual(urteile, []);
+    assert.ok(report?.findings.every((f) => f.outcome === "untested"));
   });
 
   it("meldet fehlende Landmarks als REVIEW, außer main", () => {
@@ -124,7 +128,15 @@ describe("Nicht gelaufen ist nicht bestanden", () => {
     const doc = parse('<html lang="de"><head><title>T</title></head><body></body></html>');
     const report = scan(doc.documentElement).documents[0]?.report;
     const offen = report?.rule_runs.filter((r) => r.not_run !== undefined).map((r) => r.rule_id);
-    assert.deepEqual(offen, ["contrast/text-insufficient", "contrast/text-undetermined"]);
+    assert.ok(offen?.includes("contrast/text-insufficient"));
+    assert.ok(offen?.includes("contrast/text-undetermined"));
+    // Dazu die Heuristiken über Layout und Geometrie — alles aus Tier 3,
+    // nichts aus Tier 1 oder 2.
+    const tier3 = /^(contrast|order|motion|reflow|focus|targets)\/|^keyboard\/pointer-only$/;
+    assert.deepEqual(
+      offen?.filter((id) => !tier3.test(id)),
+      [],
+    );
     assert.equal(report?.summary.pass, 0);
   });
 

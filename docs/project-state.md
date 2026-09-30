@@ -282,20 +282,56 @@ Belegt an `examples/contrast.html` mit fünf bekannten Fällen: 2,85:1 fällt au
 `display: none` wird gar nicht erst geprüft. Alle fünf treffen, und mit
 eingeschaltetem Durchgang ist `rules_not_run` null.
 
-**Geometrie (`bounds`) ist noch nicht erhoben.** Die Kontrastregel braucht sie
-nicht, und `getBoundingClientRect()` je Knoten kostet so viel wie der ganze
-Collector. Sie kommt mit der ersten Regel, die sie braucht — Zielgrößen.
+**Layout und Geometrie für die Heuristiken.** Seit `a11y-rules` mit den
+heuristischen Tier-3-Regeln (liveaudit#6) liest derselbe Durchgang aus dem
+ohnehin geholten Stil `flex-direction`, `order`, `min-width`, `cursor` und
+`position`, einmal je Scan `document.getAnimations()`, und nur an
+Bedienelementen `getBoundingClientRect()` samt `elementFromPoint()` für die
+Verdeckung — Geometrie je Knoten kostete so viel wie der ganze Collector.
+Fixierte und klebende Leisten werden gegen `scroll-padding-top` gehalten. Die
+Spalten gehen über `Scan.withLayout()` an `@casoon/a11y-wasm`. Alle diese
+Regeln melden `REVIEW`, nie `FAIL`.
+
+**Fokus-Sichtbarkeit ist ein eigener Durchgang** (`scan(root, { rendering:
+true, focus: true })`). Er fokussiert jedes erreichbare Element einmal mit
+`focusVisible: true` und `preventScroll` und vergleicht Rahmen, Schatten,
+Ränder, Hintergrund und Text vor und nach dem Fokus. Das ist die erste Phase,
+die den Zustand der Seite verändert — die Seite bekommt `focus`/`blur` und
+kann darauf reagieren —, deshalb nur auf Wunsch, und danach steht der Fokus
+wieder, wo er stand. Ohne ihn steht `focus/indicator-unmeasured` als
+`UNTESTED` im Bericht.
+
+**Checkliste.** Was keine Maschine entscheiden kann (Untertitel, Qualität von
+Alt-Texten, Fehlermeldungen, Zeitbegrenzung …), steht seit liveaudit#7 je
+Seite und Kriterium einmal als `UNTESTED` unter `manual/*` — auch auf einer
+einwandfreien Seite. „No findings" erscheint deshalb nur noch auf Seiten ohne
+Text, Links, Bilder und Felder.
+
+**Gemessen an barrierlab.eu (30.09.2026, 237 Seiten).** Vor den Änderungen
+992 falsche `FAIL` an versteckten Elementen und 33.682 `UNTESTED` durch nicht
+gelesene oklch-Farben; danach auf der intakten Seite keine `FAIL`, 14
+`links/ambiguous-name` und 28 `targets/size` als `REVIEW`. Die absichtlich
+eingebauten Barrieren Kontrast (auch im dunklen Thema), Labels, versteckte
+Links, Reihenfolge, Bewegung, Reflow, Verdeckung und Fokus werden gemeldet.
+Nicht erkannt: die Klick-Attrappen „Search"/„Reject" — ihr Handler hängt per
+JavaScript, ohne `cursor: pointer` und ohne `onclick`, und das sieht keine
+Seite von innen.
 
 ## Bundle-Größe
 
-`dist/inspector.js` 54,7 KB roh / **19,3 KB gzip**, `dist/a11y_wasm_bg.wasm`
-168,5 KB roh / **80,9 KB gzip**. Gesamt 100,2 KB gzip (30.09.2026, `a11y-rules`
+`dist/inspector.js` 57,8 KB roh / **20,4 KB gzip**, `dist/a11y_wasm_bg.wasm`
+197,6 KB roh / **92,4 KB gzip**. Gesamt 112,8 KB gzip (30.09.2026, mit dem
+noch unveröffentlichten Stand von `@casoon/a11y-wasm` aus liveaudit#1–#7; davor `a11y-rules`
 0.12.1 über `@casoon/a11y-wasm` 0.2.1). Das JavaScript liegt damit bei
-**77 % seiner Grenze von 25 KB** — das Seitengewicht hat 2,4 KB gekostet, davon
+**82 % seiner Grenze von 25 KB** — das Seitengewicht hat 2,4 KB gekostet, davon
 rund 1,4 KB die Messung selbst, der Rest Tabelle, CSS und Hinweise. Die Grenze
 wurde dafür am 29.09.2026 von 20 auf 25 KB angehoben, siehe
 [decisions.md](decisions.md). Sparpotenzial bliebe etwa im CSS, das als
 Zeichenkette nicht minifiziert wird.
+
+**Das WASM liegt bei 92 % seiner Grenze von 100 KB.** Der Sprung von 80,9 auf
+92,4 KB kommt aus der Sicht je Geltungsbereich (+2,5 KB), der Checkliste und
+den acht Heuristiken (+9 KB). Der nächste Regelausbau stößt an die Grenze.
 
 Der Zuwachs des WASM von 63,1 auf 79,5 KB verteilt sich auf `a11y-rules` 0.7.0
 (Tier 3 samt Kontrastregeln) und 0.8.0 (neun Strukturregeln: Landmarks,

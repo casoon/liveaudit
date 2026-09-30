@@ -26,6 +26,7 @@ interface LiveAuditApi {
   scan(root?: Element, options?: { rendering?: boolean }): Promise<ScanErgebnis>;
   show(root?: Element, options?: { rendering?: boolean }): Promise<unknown>;
   watch(root?: Element, options?: { rendering?: boolean; debounceMs?: number }): Promise<unknown>;
+  rescan(root?: Element): Promise<void>;
   unwatch(): void;
   hide(): void;
   isVisible(): boolean;

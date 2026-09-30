@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Heuristiken</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { margin: 0; padding: 80px 24px 24px; font: 16px/1.6 system-ui, sans-serif; background: #fff; color: #111; }
+      #leiste { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: #eee; z-index: 10; }
+      #verdeckt { position: absolute; top: 10px; left: 24px; }
+      #umgekehrt { display: flex; flex-direction: row-reverse; gap: 8px; }
+      #endlos { animation: drehen 2s linear infinite; display: inline-block; }
+      @keyframes drehen { to { transform: rotate(360deg); } }
+      #breit { min-width: 480px; }
+      #suchen { cursor: pointer; display: inline-block; padding: 8px; background: #ddd; }
+      #klein { width: 16px; height: 16px; padding: 0; }
+      button { min-width: 44px; min-height: 44px; }
+      #klein { min-width: 0; min-height: 0; }
+      #ohne-fokus:focus, #ohne-fokus:focus-visible { outline: none; }
+      /* Stil gesetzt, Breite 0: Wie auf barrierlab.eu per --focus-ring-width. */
+      #rahmen-null:focus, #rahmen-null:focus-visible { outline: solid 0 #000; }
+    </style>
+  </head>
+  <body>
+    <a href="#inhalt">Zum Inhalt</a>
+    <header id="leiste"><nav aria-label="Haupt"><a href="/">Start</a></nav></header>
+    <!-- Liegt unter der fixierten Leiste. -->
+    <a id="verdeckt" href="/verdeckt">Unter der Leiste</a>
+    <main id="inhalt">
+      <h1>Heuristiken</h1>
+      <div id="umgekehrt"><a href="/1">Eins</a><a href="/2">Zwei</a></div>
+      <span id="endlos">*</span>
+      <div id="breit">Mindestens 480 Pixel breit.</div>
+      <div id="suchen">Suchen</div>
+      <button id="klein" type="button" aria-label="Schließen">x</button>
+      <button id="ohne-fokus" type="button">Ohne Fokusrahmen</button>
+      <button id="mit-fokus" type="button">Mit Fokusrahmen</button>
+      <button id="rahmen-null" type="button">Rahmen mit Breite null</button>
+    </main>
+    <footer>Fuß</footer>
+
+    <script type="module">
+      import { enable } from "../../../dist/inspector.js";
+
+      enable();
+    </script>
+  </body>
+</html>

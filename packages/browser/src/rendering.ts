@@ -35,6 +35,16 @@ export const FLAG_DISPLAY_NONE = 1;
 export const FLAG_VISIBILITY_HIDDEN = 2;
 export const FLAG_ERFASST = 4;
 
+/** Bits der Layout-Spalte, passend zu `LAYOUT_*` in `@casoon/a11y-wasm`. */
+const LAYOUT_ERFASST = 1;
+const LAYOUT_UMGEKEHRT = 2;
+const LAYOUT_ZEIGER = 4;
+const LAYOUT_ENDLOS = 8;
+const LAYOUT_VERDECKT = 16;
+const LAYOUT_FOKUS_GEMESSEN = 32;
+const LAYOUT_FOKUS_SICHTBAR = 64;
+const LAYOUT_VERSTECKT_FOKUS = 128;
+
 /** Die Tier-3-Spalten, parallel zu den Arena-Indizes. */
 export interface RenderingColumns {
   color: Uint32Array;
@@ -42,6 +52,78 @@ export interface RenderingColumns {
   fontSizePx: Float32Array;
   fontWeight: Uint16Array;
   flags: Uint8Array;
+  /** Layout für die heuristischen Regeln, Bits `LAYOUT_*`. */
+  layoutFlags: Uint8Array;
+  order: Int32Array;
+  minWidthPx: Float32Array;
+  /** Vier Werte je Knoten (x, y, Breite, Höhe); Breite `NaN` = nicht erhoben. */
+  bounds: Float32Array;
+}
+
+/**
+ * Ob die Tabtaste dieses Element erreicht — dieselbe Abgrenzung wie
+ * `per_tab_erreichbar` in `a11y-rules`. Nur an solchen Elementen wird
+ * Geometrie erhoben: `getBoundingClientRect()` je Knoten kostet so viel wie
+ * der ganze Collector.
+ */
+function perTabErreichbar(el: Element): boolean {
+  const tabindex = el.getAttribute("tabindex");
+  if (tabindex !== null && tabindex.trim() !== "" && !Number.isNaN(Number(tabindex))) {
+    return Number(tabindex) >= 0;
+  }
+  if (el.hasAttribute("disabled")) return false;
+  switch (el.localName) {
+    case "a":
+    case "area":
+      return el.hasAttribute("href");
+    case "input":
+      return el.getAttribute("type")?.trim().toLowerCase() !== "hidden";
+    case "button":
+    case "select":
+    case "textarea":
+    case "summary":
+    case "iframe":
+      return true;
+    default:
+      return false;
+  }
+}
+
+/** Elemente, auf denen gerade eine Animation ohne Ende läuft. */
+function endloseAnimationen(doc: Document): Set<Element> {
+  const treffer = new Set<Element>();
+  if (typeof doc.getAnimations !== "function") return treffer;
+  for (const animation of doc.getAnimations()) {
+    if (animation.playState !== "running") continue;
+    const effekt = animation.effect as KeyframeEffect | null;
+    const ziel = effekt?.target ?? null;
+    if (ziel !== null && effekt?.getComputedTiming().iterations === Number.POSITIVE_INFINITY) {
+      treffer.add(ziel);
+    }
+  }
+  return treffer;
+}
+
+/**
+ * Ob die Mitte von `el` im sichtbaren Bereich liegt und dort ein fremdes,
+ * fixiertes oder klebendes Element getroffen wird. Der Inspector-Layer ist
+ * `pointer-events: none` und wird dabei nicht getroffen.
+ */
+function istVerdeckt(el: Element, r: DOMRect, win: Window): boolean {
+  const x = r.left + r.width / 2;
+  const y = r.top + r.height / 2;
+  if (x < 0 || y < 0 || x >= win.innerWidth || y >= win.innerHeight) return false;
+  const wurzel = el.getRootNode() as Document | ShadowRoot;
+  const getroffen = wurzel.elementFromPoint(x, y);
+  if (getroffen === null || getroffen === el || el.contains(getroffen) || getroffen.contains(el)) {
+    return false;
+  }
+  for (let cur: Element | null = getroffen; cur !== null; cur = flatParent(cur)) {
+    if (cur.contains(el)) return false;
+    const position = win.getComputedStyle(cur).position;
+    if (position === "fixed" || position === "sticky") return true;
+  }
+  return false;
 }
 
 /**
@@ -203,6 +285,39 @@ function effektiverHintergrund(
   return ergebnis;
 }
 
+/** Ein fixiertes oder klebendes Element, wie es am oberen Rand steht. */
+interface Leiste {
+  id: number;
+  oben: number;
+  unten: number;
+}
+
+/**
+ * Markiert die Leisten, unter denen ein fokussiertes Element ganz
+ * verschwinden kann (WCAG 2.4.11).
+ *
+ * Tabbt man rückwärts, richtet der Browser das Ziel oben aus — bei
+ * `scroll-padding-top`. Decken fixierte und klebende Leisten, lückenlos
+ * aneinander, den Streifen ab dieser Kante ab, landet ein niedriges
+ * Bedienelement ganz unter ihnen. Eine klebende Leiste zählt an der Stelle, an
+ * der sie klebt (`top`), nicht an der, an der sie gerade steht.
+ */
+function markiereLeisten(leisten: Leiste[], flags: Uint8Array, win: Window): void {
+  if (leisten.length === 0) return;
+  const kante =
+    Number.parseFloat(win.getComputedStyle(win.document.documentElement).scrollPaddingTop) || 0;
+  leisten.sort((a, b) => a.oben - b.oben);
+  let bis = kante;
+  const deckend: Leiste[] = [];
+  for (const l of leisten) {
+    if (l.unten <= kante + 1) continue;
+    if (l.oben > bis + 1) break;
+    deckend.push(l);
+    bis = Math.max(bis, l.unten);
+  }
+  for (const l of deckend) flags[l.id] = (flags[l.id] ?? 0) | LAYOUT_VERSTECKT_FOKUS;
+}
+
 /**
  * Sammelt die Tier-3-Spalten für eine bereits aufgebaute Arena.
  *
@@ -220,8 +335,15 @@ export function collectRendering(
   const fontWeight = new Uint16Array(nodes);
   const flags = new Uint8Array(nodes);
 
+  const layoutFlags = new Uint8Array(nodes);
+  const order = new Int32Array(nodes);
+  const minWidthPx = new Float32Array(nodes);
+  const bounds = new Float32Array(nodes * 4).fill(Number.NaN);
+
   const memo = new Map<Element, PackedColor>();
   const lies = farbleser();
+  const endlos = endloseAnimationen(win.document);
+  const leisten: Leiste[] = [];
 
   for (const [id, el] of idToElement) {
     if (id >= nodes) continue;
@@ -240,10 +362,116 @@ export function collectRendering(
 
     const vorne = lies(stil.color);
     color[id] = vorne === DURCHSICHTIG ? UNBESTIMMT : vorne;
+
+    let l = LAYOUT_ERFASST;
+    if (stil.display.endsWith("flex") && stil.flexDirection.endsWith("-reverse")) {
+      l |= LAYOUT_UMGEKEHRT;
+    }
+    if (stil.cursor === "pointer") l |= LAYOUT_ZEIGER;
+    if (endlos.has(el)) l |= LAYOUT_ENDLOS;
+    order[id] = Number.parseInt(stil.order, 10) || 0;
+    minWidthPx[id] = Number.parseFloat(stil.minWidth) || 0;
+    if (perTabErreichbar(el)) {
+      const r = el.getBoundingClientRect();
+      bounds.set([r.x, r.y, r.width, r.height], id * 4);
+      if (istVerdeckt(el, r, win)) l |= LAYOUT_VERDECKT;
+    }
+    if (stil.position === "fixed" || stil.position === "sticky") {
+      const r = el.getBoundingClientRect();
+      // Nur Leisten über die halbe Breite; ein fixierter Knopf in der Ecke
+      // verdeckt keine Zeile.
+      if (r.height > 0 && r.width >= win.innerWidth / 2) {
+        const oben = stil.position === "sticky" ? Number.parseFloat(stil.top) : r.top;
+        if (Number.isFinite(oben)) leisten.push({ id, oben, unten: oben + r.height });
+      }
+    }
+    layoutFlags[id] = l;
     fontSizePx[id] = Number.parseFloat(stil.fontSize) || 0;
     fontWeight[id] = Number.parseInt(stil.fontWeight, 10) || 0;
     background[id] = effektiverHintergrund(el, win, memo, lies);
   }
 
-  return { color, background, fontSizePx, fontWeight, flags };
+  markiereLeisten(leisten, layoutFlags, win);
+
+  return {
+    color,
+    background,
+    fontSizePx,
+    fontWeight,
+    flags,
+    layoutFlags,
+    order,
+    minWidthPx,
+    bounds,
+  };
+}
+
+/**
+ * Was sich beim Fokussieren ändern darf, damit der Fokus als sichtbar gilt.
+ * Der Rahmen (`outline`) kommt gesondert: Ein Wechsel von `none` auf `solid`
+ * bei Breite 0 zeigt nichts.
+ */
+const FOKUS_EIGENSCHAFTEN = [
+  "box-shadow",
+  "border-top-color",
+  "border-bottom-color",
+  "border-left-color",
+  "border-right-color",
+  "background-color",
+  "color",
+  "text-decoration-line",
+] as const;
+
+function fokusStil(stil: CSSStyleDeclaration): string {
+  const rahmen =
+    stil.outlineStyle !== "none" && (Number.parseFloat(stil.outlineWidth) || 0) > 0
+      ? `${stil.outlineStyle} ${stil.outlineWidth} ${stil.outlineColor}`
+      : "none";
+  return [rahmen, ...FOKUS_EIGENSCHAFTEN.map((e) => stil.getPropertyValue(e))].join("|");
+}
+
+/**
+ * Misst, ob der Fokus an jedem erreichbaren Element sichtbar wird.
+ *
+ * **Das verändert den Zustand der Seite.** Jedes Element wird fokussiert,
+ * die Seite bekommt `focus`- und `blur`-Ereignisse und kann darauf reagieren
+ * — ein Menü öffnen, etwas nachladen. Deshalb nur auf ausdrücklichen Wunsch
+ * (`scan(root, { rendering: true, focus: true })`), und danach steht der
+ * Fokus wieder dort, wo er war. Gescrollt wird nicht (`preventScroll`).
+ *
+ * Fokussiert wird mit `focusVisible: true`: Ob `:focus-visible` greift,
+ * hängt sonst davon ab, ob zuletzt Maus oder Tastatur benutzt wurde.
+ */
+export function measureFocus(
+  idToElement: Map<number, Element>,
+  columns: RenderingColumns,
+  win: Window,
+): void {
+  const doc = win.document;
+  const vorher = doc.activeElement;
+
+  for (const [id, el] of idToElement) {
+    if (id >= columns.layoutFlags.length) continue;
+    if (((columns.flags[id] ?? 0) & (FLAG_DISPLAY_NONE | FLAG_VISIBILITY_HIDDEN)) !== 0) continue;
+    if (!perTabErreichbar(el) || !("focus" in el)) continue;
+
+    const stil = win.getComputedStyle(el);
+    const ohne = fokusStil(stil);
+    (el as HTMLElement).focus({ preventScroll: true, focusVisible: true } as FocusOptions);
+    const aktiv = (el.getRootNode() as Document | ShadowRoot).activeElement;
+    if (aktiv !== el) continue;
+    const mit = fokusStil(stil);
+
+    let l = (columns.layoutFlags[id] ?? 0) | LAYOUT_FOKUS_GEMESSEN;
+    if (mit !== ohne) l |= LAYOUT_FOKUS_SICHTBAR;
+    columns.layoutFlags[id] = l;
+  }
+
+  // Kein `instanceof HTMLElement`: Ein Same-Origin-Rahmen ist ein eigenes
+  // Realm mit eigenen Konstruktoren.
+  if (vorher !== null && vorher !== doc.body && "focus" in vorher) {
+    (vorher as HTMLElement).focus({ preventScroll: true });
+  } else if (doc.activeElement !== null && "blur" in doc.activeElement) {
+    (doc.activeElement as HTMLElement).blur();
+  }
 }

@@ -100,8 +100,10 @@ test.describe("Zustände ohne Mutation", () => {
     const kontrast = page.locator(`${HOST} .marker[aria-label*="contrast/text-insufficient"]`);
     await expect(kontrast).toHaveCount(0);
 
-    // Nur CSS schaltet um — kein Attribut, kein Knoten ändert sich.
-    await page.locator("#schalter").check();
+    // Nur CSS schaltet um — kein Attribut, kein Knoten ändert sich. Geklickt
+    // wird am Element, nicht über den Zeiger: Die Checkbox ist kleiner als
+    // 24 px, ihr targets/size-Marker liegt auf ihr.
+    await page.locator("#schalter").dispatchEvent("click");
 
     await expect(kontrast).toHaveCount(1);
   });
@@ -111,7 +113,7 @@ test.describe("Zustände ohne Mutation", () => {
       await window.LiveAudit.show(undefined, { rendering: true });
     });
     const kontrast = page.locator(`${HOST} .marker[aria-label*="contrast/text-insufficient"]`);
-    await page.locator("#schalter").check();
+    await page.locator("#schalter").dispatchEvent("click");
     await page.waitForTimeout(300);
     await expect(kontrast).toHaveCount(0);
 

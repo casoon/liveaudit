@@ -47,6 +47,31 @@ await LiveAudit.show(undefined, { rendering: true });
 Without it the contrast rules do not run; the report lists them as not run, with the reason —
 never as `PASS`, and never silence.
 
+The same pass feeds heuristic checks: CSS reordering over focusable content, endless
+animation without a pause control, `min-width` above 320 px, elements that look clickable
+but have no role, controls hidden under fixed bars, targets under 24 × 24 px that also miss
+the spacing exception. They report `REVIEW`, never `FAIL` — a place to look, not a verdict.
+
+## Focus visibility: `{ rendering: true, focus: true }`
+
+Whether keyboard focus is visible can only be measured by focusing. This pass focuses every
+reachable control once (`focusVisible: true`, `preventScroll`), compares outline, shadow,
+border, background and text before and after, and puts focus back where it was:
+
+```js
+await LiveAudit.show(undefined, { rendering: true, focus: true });
+```
+
+It is the one pass that changes the page's state: the page receives `focus` and `blur` and may
+react to them. Without it, focus visibility is reported as `UNTESTED`.
+
+## The checklist: `manual/*`
+
+What no machine can decide — captions and transcripts, whether an `alt` text fits, text
+styled as a heading, colour as the only cue, time limits, error messages, captchas — appears
+once per page as `UNTESTED` whenever the page contains something it applies to. It is the
+list of what still needs a person.
+
 ## Live mode: `watch(root?, options?)`
 
 Scans, draws the layer, and keeps it current while the page changes — for pages
@@ -58,7 +83,8 @@ await LiveAudit.watch(undefined, { debounceMs: 500 });
 LiveAudit.unwatch();                     // stop; the layer stays as it is
 ```
 
-Only the **changed subtree** is scanned again, 200 ms after the last mutation.
+Only the **changed subtree** is scanned again, 200 ms after the last mutation and at
+most 1 s after the first (`maxWaitMs`), so a page that never settles still updates.
 Collecting the DOM is the measured bottleneck — about 90% of a scan — so a full
 rescan per mutation would be felt on any page that moves.
 
@@ -70,6 +96,17 @@ Two limits, both deliberate:
   verdict. They are as old as the last full scan, which beats being wrong.
 - Mutations *inside* a same-origin frame are not watched. Frames are rescanned
   when a subtree above them changes.
+
+State that changes without a mutation — `:checked`, `:has()`, custom properties — is picked
+up on `change` (the whole observed root) and `transitionend` (the element that moved). For
+anything else, rescan yourself:
+
+```js
+await LiveAudit.rescan();                // in live mode: the observed root
+await LiveAudit.rescan(panel);           // in live mode: just this subtree
+```
+
+Without live mode, `rescan()` repeats the last `show()`.
 
 ## Unlocking from your own code
 

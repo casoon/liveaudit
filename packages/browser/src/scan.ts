@@ -11,7 +11,7 @@
 import { Scan } from "@casoon/a11y-wasm";
 
 import { collect, type FrameRef } from "./collect.ts";
-import { collectRendering } from "./rendering.ts";
+import { collectRendering, measureFocus } from "./rendering.ts";
 import type { Report } from "./report.ts";
 
 /** Ein Bereich, über den der Scan bewusst keine Aussage trifft. */
@@ -61,6 +61,13 @@ export interface ScanOptions {
    * Ohne ihn melden die Kontrastregeln `UNTESTED` — nicht `PASS`.
    */
   rendering?: boolean;
+  /**
+   * Die Fokus-Sichtbarkeit messen (WCAG 2.4.7). Fokussiert jedes erreichbare
+   * Element einmal und verändert damit den Zustand der Seite — die Seite
+   * bekommt `focus`/`blur` und kann darauf reagieren. Nur mit `rendering`.
+   * Ohne ihn steht die Fokus-Sichtbarkeit als `UNTESTED` im Bericht.
+   */
+  focus?: boolean;
 }
 
 interface Pending {
@@ -115,8 +122,10 @@ export function scan(
         if (view !== null) {
           const renderingStarted = performance.now();
           const r = collectRendering(collected.idToElement, c.nodes, view);
+          if (options.focus === true) measureFocus(collected.idToElement, r, view);
           renderingMs += performance.now() - renderingStarted;
           arena.withRendering(r.color, r.background, r.fontSizePx, r.fontWeight, r.flags);
+          arena.withLayout(r.layoutFlags, r.order, r.minWidthPx, r.bounds);
         }
       }
       report = arena.run() as Report;

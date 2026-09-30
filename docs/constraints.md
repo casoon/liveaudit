@@ -53,9 +53,9 @@ Technisch prüfbar, inhaltlich nicht zuverlässig automatisch beurteilbar:
   nicht und stehen mit `capability_missing` als nicht gelaufen im Bericht — nicht
   als bestanden. Ein `UNTESTED`-Befund entsteht erst, wenn der Durchgang lief und
   eine Farbe trotzdem nicht bestimmbar war (`contrast/text-undetermined`).
-- **`getBoundingClientRect()` je Knoten wird nicht erhoben.** Geometrie kostet
-  noch einmal so viel wie der ganze Collector und kommt erst mit der ersten
-  Regel, die sie braucht.
+- **`getBoundingClientRect()` je Knoten wird nicht erhoben**, nur an
+  Bedienelementen für Zielgröße und Verdeckung. Geometrie je Knoten kostete
+  noch einmal so viel wie der ganze Collector.
 - **Re-Scans im Live-Modus sind debounced (200 ms)** und erfassen nur den
   geänderten Teilbaum. Bei 79 ms je Vollscan wäre ein Scan-Sturm sofort spürbar.
 

@@ -15,8 +15,20 @@ minor version.
 - Live mode no longer starves on pages that never settle: it rescans at the
   latest 1 s after the first pending change (`maxWaitMs`).
 
+- Rules no longer run on hidden content: no false `FAIL` for a nameless button
+  inside `hidden`, `display: none` or `aria-hidden` (a11y-rules). Labels that
+  are not rendered no longer count, and focusable elements under an
+  `aria-hidden` ancestor are reported.
+
 ### Added
 
+- A checklist: criteria no machine can decide appear once per page as
+  `UNTESTED` under `manual/*`.
+- Heuristic `REVIEW` checks with the rendering pass: reading order, endless
+  animation, reflow, pointer-only controls, obscured focus, target size.
+- `scan(root, { rendering: true, focus: true })` measures focus visibility.
+  It moves focus through the page once and restores it; without it, focus
+  visibility is reported as `UNTESTED`.
 - `LiveAudit.rescan(root?)` for changes that are not DOM mutations.
 - Live mode also rescans on `change` and `transitionend`.
 

@@ -26,7 +26,16 @@ page with `?liveaudit`; inert without it.
 **Contrast runs too**, via an opt-in second pass:
 `scan(root, { rendering: true })`. It costs 1.9× to 4.6× the collector, so it
 is not the default — and without it the contrast rules do not run and are
-recorded as *not run*, with the reason, never as `PASS`.
+recorded as *not run*, with the reason, never as `PASS`. The same pass feeds
+heuristic checks — reading order, endless animation, reflow, pointer-only
+controls, obscured focus, target size — which report `REVIEW`, never `FAIL`.
+Focus visibility needs a pass that moves focus, so it is its own opt-in:
+`{ rendering: true, focus: true }`.
+
+**What no machine can decide becomes a checklist**, not silence: captions,
+alt text quality, error messages, time limits and the like appear once per
+page as `UNTESTED` under `manual/*` whenever the page contains something they
+apply to.
 
 **It can stay current while the page changes.** `LiveAudit.watch()` observes the
 document and rescans **only the changed subtree**, 200 ms after the last

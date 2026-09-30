@@ -18,15 +18,17 @@ test.beforeEach(async ({ page }) => {
   await oeffne(page, "/examples/inspector.html");
 });
 
-test("ohne Kontrastdurchgang nennt die Seitenleiste die beiden Regeln", async ({ page }) => {
+test("ohne Darstellungsdurchgang nennt die Seitenleiste die Tier-3-Regeln", async ({ page }) => {
   await page.evaluate(async () => {
     await window.LiveAudit.show();
   });
 
-  await expect(page.locator(`${GRUPPE} h3`)).toHaveText("Rules that did not run (2)");
+  // Kontrast und die Heuristiken über Layout und Geometrie (liveaudit#6).
+  await expect(page.locator(`${GRUPPE} h3`)).toHaveText("Rules that did not run (10)");
   const eintraege = await page.locator(`${GRUPPE} li`).allInnerTexts();
   expect(eintraege.join(" ")).toContain("contrast/text-insufficient");
   expect(eintraege.join(" ")).toContain("contrast/text-undetermined");
+  expect(eintraege.join(" ")).toContain("targets/size");
   // Der Grund steht dabei, nicht nur die Kennung.
   expect(eintraege.join(" ")).toContain("capability missing");
 });
