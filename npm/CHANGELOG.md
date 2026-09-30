@@ -4,6 +4,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Each release
 names the bundled rule set; a change to it that changes findings is at least a
 minor version.
 
+## [Unreleased]
+
+### Fixed
+
+- Contrast: colours in `oklch()`, `lab()`, `color()` and other spaces are
+  converted to sRGB instead of being read as transparent. A dark theme built on
+  oklch tokens was checked against white and stayed silent. A background that
+  cannot be read ends the search as undetermined (`UNTESTED`).
+- Live mode no longer starves on pages that never settle: it rescans at the
+  latest 1 s after the first pending change (`maxWaitMs`).
+
+### Added
+
+- `LiveAudit.rescan(root?)` for changes that are not DOM mutations.
+- Live mode also rescans on `change` and `transitionend`.
+
 ## [0.1.0] - 2026-09-29
 
 First release on npm.

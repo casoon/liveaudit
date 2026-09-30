@@ -64,6 +64,38 @@ test.describe("an Shadow-Grenzen", () => {
 });
 
 /**
+ * Chrome liefert berechnete Farben in dem Farbraum, in dem sie geschrieben
+ * wurden. Wer nur `rgb()` liest, hält einen oklch-Hintergrund für
+ * durchsichtig, steigt bis zum Dokument auf und prüft gegen Weiß — im dunklen
+ * Thema schweigt er dann.
+ */
+test.describe("in anderen Farbräumen", () => {
+  test.beforeEach(async ({ page }) => {
+    await oeffne(page, "/tests/browser/fixtures/kontrast-farbraum.html");
+  });
+
+  test("grauer Text auf dunklem oklch-Grund fällt auf", async ({ page }) => {
+    const befunde = await kontrastBefunde(page);
+    expect(befunde["grau-auf-oklch"]).toBe("contrast/text-insufficient:fail");
+  });
+
+  test("heller oklch-Text auf dunklem oklch-Grund besteht", async ({ page }) => {
+    const befunde = await kontrastBefunde(page);
+    expect(befunde["hell-auf-oklch"]).toBeUndefined();
+  });
+
+  test("lab() wird ebenso umgerechnet", async ({ page }) => {
+    const befunde = await kontrastBefunde(page);
+    expect(befunde["lab-auf-lab"]).toBe("contrast/text-insufficient:fail");
+  });
+
+  test("keine Fläche bleibt ungeprüft, nur weil sie nicht rgb() ist", async ({ page }) => {
+    const befunde = await kontrastBefunde(page);
+    expect(Object.values(befunde)).not.toContain("contrast/text-undetermined:untested");
+  });
+});
+
+/**
  * Der Aufstieg über den flachen Baum darf im Licht-DOM nichts verändern —
  * dieselben fünf bekannten Fälle, die `examples/contrast.html` von Hand zeigt.
  */

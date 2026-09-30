@@ -261,6 +261,16 @@ demselben Host zu Unrecht. Der Durchgang nimmt jetzt denselben Weg wie der
 Collector — `assignedSlot`, sonst der Host des Shadow Roots, sonst
 `parentElement`.
 
+**Farben in jedem Farbraum.** Chrome liefert berechnete Farben in dem Raum, in
+dem sie geschrieben wurden — `oklch()`, `lab()`, `color(…)`. Gelesen wurde
+anfangs nur `rgb()`; ein oklch-Hintergrund galt damit als durchsichtig, und der
+Aufstieg endete beim Weiß des Dokuments. Im dunklen Thema von barrierlab.eu
+blieb so eine absichtlich eingebaute Kontrastbarriere stumm (Issue #2). Was
+nicht `rgb()` ist, malt der Durchgang jetzt auf eine 1×1-`OffscreenCanvas` und
+liest das Pixel in sRGB zurück — einmal je Wert, nicht je Element. Und ein
+Wert, der sich trotzdem nicht lesen lässt, beendet den Aufstieg als „nicht
+bestimmbar", statt als durchsichtig übergangen zu werden.
+
 Was der Collector nicht auf eine Farbe reduzieren kann — Hintergrundbild,
 Verlauf, `background-blend-mode`, teildurchsichtiger Hintergrund über einem
 Vorfahren —, liefert er als „nicht bestimmbar". Die Regel meldet dann
@@ -278,10 +288,10 @@ Collector. Sie kommt mit der ersten Regel, die sie braucht — Zielgrößen.
 
 ## Bundle-Größe
 
-`dist/inspector.js` 53,4 KB roh / **18,8 KB gzip**, `dist/a11y_wasm_bg.wasm`
-168,5 KB roh / **80,9 KB gzip**. Gesamt 99,7 KB gzip (29.09.2026, `a11y-rules`
+`dist/inspector.js` 54,7 KB roh / **19,3 KB gzip**, `dist/a11y_wasm_bg.wasm`
+168,5 KB roh / **80,9 KB gzip**. Gesamt 100,2 KB gzip (30.09.2026, `a11y-rules`
 0.12.1 über `@casoon/a11y-wasm` 0.2.1). Das JavaScript liegt damit bei
-**75 % seiner Grenze von 25 KB** — das Seitengewicht hat 2,4 KB gekostet, davon
+**77 % seiner Grenze von 25 KB** — das Seitengewicht hat 2,4 KB gekostet, davon
 rund 1,4 KB die Messung selbst, der Rest Tabelle, CSS und Hinweise. Die Grenze
 wurde dafür am 29.09.2026 von 20 auf 25 KB angehoben, siehe
 [decisions.md](decisions.md). Sparpotenzial bliebe etwa im CSS, das als
@@ -389,7 +399,17 @@ Der Aufbau folgt der Messung aus dem Spike: Der Collector ist der Engpass
 (79 ms bei 31.000 Knoten, rund 90 % der Gesamtzeit). Ein Vollscan je Mutation
 wäre auf einer Seite, die sich bewegt, sofort spürbar. Deshalb:
 
-- **Entprellt**, Vorgabe 200 ms nach der letzten Mutation.
+- **Entprellt**, Vorgabe 200 ms nach der letzten Mutation — aber **höchstens
+  1 s** ab der ersten offenen Änderung (`maxWaitMs`). Ohne diese Grenze hungert
+  der Modus aus: Auf barrierlab.eu tickte ein Countdown alle 100 ms, und der
+  Layer zog während 20 s Simulation kein einziges Mal nach (Issue #5).
+- **Zustände ohne Mutation.** `:checked`, `:has()` und Custom Properties ändern
+  nichts am DOM. Der Modus hört auf `change` — neu gescannt wird dann die ganze
+  beobachtete Wurzel, weil ein Selektor überall wirken kann — und auf
+  `transitionend`, dann nur das Element, das sich bewegt hat; so wird ein Scan,
+  der mitten in einen Übergang fiel, nach dessen Ende nachgeholt. Alles Übrige
+  stößt der Host über `LiveAudit.rescan(root?)` an; ohne Live-Modus wiederholt
+  es den letzten `show()`.
 - **Neu gescannt wird nur der geänderte Teilbaum.** Aus den Mutationszielen
   wird die kleinste Menge Wurzeln bestimmt, die sie abdeckt — wird ein ganzer
   Bereich ausgetauscht, bleibt eine Wurzel übrig statt hundert.
@@ -438,8 +458,8 @@ nur auf, wenn jemand hinsieht.
 | `zusicherungen.spec.ts` | genau ein Host als letztes Kind von `<body>`, `fixed` und `pointer-events: none`, unveränderter Teilbaum (Markup, Rechtecke, Scrollhöhe), restloses `hide()`, ein echter Klick neben dem Layer, Fokusrückgabe |
 | `bedienung.spec.ts` | Marker, Popover, Escape, Seitenleiste, Andocken und Ziehgriff — jeweils mit Maus **und** Tastatur |
 | `geometrie.spec.ts` | Marker über Same-Origin-Rahmen (samt `clientLeft`) und offenem Shadow Root, Mitwandern beim Scrollen, Neusetzen bei geänderter Fenstergröße |
-| `kontrast.spec.ts` | Hintergrund an Shadow-Grenzen und am Slot, dazu die fünf bekannten Fälle aus `examples/contrast.html` als Regressionsschutz |
-| `live.spec.ts` | Der Layer läuft mit: Element dazu, Element weg, Befund behoben, Nachbarbefund unberührt, `unwatch()` beendet es |
+| `kontrast.spec.ts` | Hintergrund an Shadow-Grenzen und am Slot, Farben in `oklch()` und `lab()`, dazu die fünf bekannten Fälle aus `examples/contrast.html` als Regressionsschutz |
+| `live.spec.ts` | Der Layer läuft mit: Element dazu, Element weg, Befund behoben, Nachbarbefund unberührt, `unwatch()` beendet es; eine nie ruhende Seite hungert ihn nicht aus; `change` und `rescan()` erfassen reine CSS-Zustände |
 | `regeln-ohne-lauf.spec.ts` | Die Gruppe der Regeln ohne Lauf nennt die Tier-3-Kennungen samt Grund, und verschwindet, sobald der Durchgang lief |
 | `nachweis.spec.ts` | Ein Dokument ohne Befund zeigt Knoten, gelaufene Regeln und Zeitpunkt; ausgefilterte Befunde behalten den Filterhinweis |
 | `gewicht.spec.ts` | Je eine Datei pro Art wird gezählt, LiveAudits eigene Dateien nicht; Chromium liefert LCP; der aufgeklappte Abschnitt bleibt beim Neuzeichnen offen |

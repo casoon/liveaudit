@@ -9,6 +9,9 @@
       body { margin: 0; padding: 24px; font: 16px/1.6 system-ui, sans-serif; }
       #bereich { border: 1px solid #d4d4d8; padding: 16px; min-height: 120px; }
       #ausserhalb { margin-top: 16px; }
+      /* Nur CSS: Der Haken zeigt ein Bild ohne Alt-Text. Keine Mutation. */
+      #zwilling { display: none; }
+      #schalter:checked ~ #zwilling { display: block; }
     </style>
   </head>
   <body>
@@ -26,6 +29,11 @@
              eines anderen Teilbaums überstehen. -->
         <button type="button" id="dauerbefund"></button>
       </div>
+      <div id="css-demo">
+        <input type="checkbox" id="schalter" aria-label="Zwilling zeigen" />
+        <p id="zwilling" style="color: #bbbbbb">Blasser Zwilling, nur per :checked sichtbar.</p>
+      </div>
+      <p id="countdown" aria-live="off">0</p>
     </main>
     <footer>Fuß</footer>
 
@@ -50,6 +58,15 @@
 
       globalThis.entferneBefund = () => {
         document.getElementById("neues-bild")?.remove();
+      };
+
+      // Tickt schneller, als die Ruhezeit verstreichen kann.
+      globalThis.starteCountdown = () => {
+        const feld = document.getElementById("countdown");
+        let n = 0;
+        return setInterval(() => {
+          feld.textContent = String(++n);
+        }, 20);
       };
 
       globalThis.behebeBefund = () => {

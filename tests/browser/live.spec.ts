@@ -67,6 +67,17 @@ test.describe("über die Schnittstelle", () => {
     expect(nachher.filter((r) => r.includes("buttons/name-missing"))).toHaveLength(1);
   });
 
+  test("eine Seite, die nie zur Ruhe kommt, hungert den Modus nicht aus", async ({ page }) => {
+    // Alle 20 ms eine Mutation, die Ruhezeit von 50 ms verstreicht nie.
+    await page.evaluate(() => globalThis.starteCountdown());
+    await page.evaluate(() => globalThis.fuegeBefundEin());
+
+    // Spätestens nach der Höchstwartezeit (Vorgabe 1 s) steht der Befund da.
+    await expect(page.locator(`${HOST} .marker[aria-label*="images/alt-missing"]`)).toHaveCount(1, {
+      timeout: 2500,
+    });
+  });
+
   test("unwatch() beendet das Mitlaufen", async ({ page }) => {
     await page.evaluate(() => window.LiveAudit.unwatch());
 
@@ -74,6 +85,39 @@ test.describe("über die Schnittstelle", () => {
     await page.waitForTimeout(400);
 
     await expect(page.locator(`${HOST} .marker[aria-label*="images/alt-missing"]`)).toHaveCount(0);
+  });
+});
+
+test.describe("Zustände ohne Mutation", () => {
+  test.beforeEach(async ({ page }) => {
+    await oeffne(page, "/tests/browser/fixtures/live.html");
+  });
+
+  test("ein change-Ereignis löst im Live-Modus einen Neuscan aus", async ({ page }) => {
+    await page.evaluate(async () => {
+      await window.LiveAudit.watch(undefined, { debounceMs: 50, rendering: true });
+    });
+    const kontrast = page.locator(`${HOST} .marker[aria-label*="contrast/text-insufficient"]`);
+    await expect(kontrast).toHaveCount(0);
+
+    // Nur CSS schaltet um — kein Attribut, kein Knoten ändert sich.
+    await page.locator("#schalter").check();
+
+    await expect(kontrast).toHaveCount(1);
+  });
+
+  test("rescan() erfasst, was der Modus nicht sieht", async ({ page }) => {
+    await page.evaluate(async () => {
+      await window.LiveAudit.show(undefined, { rendering: true });
+    });
+    const kontrast = page.locator(`${HOST} .marker[aria-label*="contrast/text-insufficient"]`);
+    await page.locator("#schalter").check();
+    await page.waitForTimeout(300);
+    await expect(kontrast).toHaveCount(0);
+
+    await page.evaluate(() => window.LiveAudit.rescan());
+
+    await expect(kontrast).toHaveCount(1);
   });
 });
 

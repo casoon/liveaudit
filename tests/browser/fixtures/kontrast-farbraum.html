@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kontrast in anderen Farbräumen</title>
+    <link rel="icon" href="data:," />
+    <style>
+      /* Dunkles Thema in oklch, wie auf barrierlab.eu. Chrome liefert den
+         berechneten Wert als oklch(…), nicht als rgb(). */
+      body { margin: 0; padding: 24px; background: oklch(0.1 0 0); color: oklch(0.97 0 0); font: 16px/1.6 system-ui, sans-serif; }
+      .lab { background: lab(20 0 0); padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>Kontrast in anderen Farbräumen</h1>
+    <!-- Rund 2:1 gegen fast Schwarz. Gegen geratenes Weiß wären es 8,9:1. -->
+    <p id="grau-auf-oklch" style="color: #4a4a4a">Grau auf dunklem oklch-Grund.</p>
+    <!-- Heller oklch-Text auf dunklem oklch-Grund: besteht. -->
+    <p id="hell-auf-oklch">Heller Text auf dunklem oklch-Grund.</p>
+    <!-- Dunkles lab()-Grau als Text auf lab()-Fläche: rund 1,5:1. -->
+    <div class="lab"><p id="lab-auf-lab" style="color: lab(35 0 0)">lab() auf lab().</p></div>
+
+    <script type="module">
+      import { enable } from "../../../dist/inspector.js";
+
+      enable();
+    </script>
+  </body>
+</html>

@@ -25,6 +25,10 @@
  * eigener Beobachter je Frame brächte Teilbäume hervor, die nicht im
  * Hauptdokument hängen — deren Marker müssten den Frame-Versatz mitführen.
  * Frames werden mitgescannt, sobald ein Teilbaum über ihnen sich ändert.
+ *
+ * **Was keine Mutation ist.** Zustände über `:checked`, `:has()` oder Custom
+ * Properties ändern nichts am DOM. Der Modus hört deshalb auf `change` und
+ * `transitionend`; alles Übrige kann der Host über `rescan()` anstoßen.
  */
 
 import { flatParent, HOST_TAG_NAME } from "./collect.ts";
@@ -33,6 +37,22 @@ import { type DocumentScan, type ScanOptions, type ScanResult, scan } from "./sc
 
 /** Ruhezeit nach der letzten Mutation. */
 const RUHE_MS = 200;
+
+/**
+ * Längste Wartezeit ab der ersten offenen Mutation.
+ *
+ * Ohne sie hungert der Modus aus: Ein Countdown, der alle 100 ms tickt, lässt
+ * die Ruhezeit nie verstreichen — gemessen auf barrierlab.eu, wo der Layer
+ * während 20 s Simulation kein einziges Mal nachzog.
+ */
+const HOECHSTENS_MS = 1000;
+
+/**
+ * Zustandswechsel, die keine Mutation sind. No-JS-Demos schalten über
+ * `:checked`, `:has()` und Custom Properties; das ändert, was gezeichnet wird,
+ * aber nicht den DOM.
+ */
+const EREIGNISSE = ["change", "transitionend"] as const;
 
 const ELEMENT_NODE = 1;
 
@@ -46,9 +66,20 @@ const BEOBACHTET: MutationObserverInit = {
 export interface LiveOptions extends ScanOptions {
   /** Ruhezeit nach der letzten Mutation, in Millisekunden. Vorgabe: 200. */
   debounceMs?: number;
+  /**
+   * Längste Wartezeit ab der ersten offenen Änderung, in Millisekunden —
+   * danach wird gescannt, auch wenn die Seite nicht zur Ruhe kommt.
+   * Vorgabe: 1000.
+   */
+  maxWaitMs?: number;
 }
 
 export interface LiveHandle {
+  /**
+   * Scannt `wurzel` sofort neu und fügt das Ergebnis ein — für Änderungen,
+   * die der Modus nicht sieht. Ohne Angabe die beobachtete Wurzel.
+   */
+  rescan(wurzel?: Element): void;
   /** Beendet die Beobachtung. Der zuletzt gelieferte Stand bleibt stehen. */
   stop(): void;
 }
@@ -275,18 +306,45 @@ export function watch(
 ): LiveHandle {
   let aktuell = start;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let spaetestens: ReturnType<typeof setTimeout> | undefined;
   const offen = new Set<Element>();
   const beobachteteRoots = new WeakSet<ShadowRoot>();
+  const lauscher: EventTarget[] = [];
 
-  const beobachter = new MutationObserver((eintraege) => {
-    for (const eintrag of eintraege) {
-      const ziel = zielElement(eintrag);
-      if (ziel !== null) offen.add(ziel);
-    }
+  /** Merkt geänderte Elemente vor und stellt die beiden Uhren. */
+  function vormerken(ziele: Iterable<Element>): void {
+    for (const ziel of ziele) offen.add(ziel);
     if (offen.size === 0) return;
     if (timer !== undefined) clearTimeout(timer);
     timer = setTimeout(durchgang, options.debounceMs ?? RUHE_MS);
+    spaetestens ??= setTimeout(durchgang, options.maxWaitMs ?? HOECHSTENS_MS);
+  }
+
+  const beobachter = new MutationObserver((eintraege) => {
+    const ziele: Element[] = [];
+    for (const eintrag of eintraege) {
+      const ziel = zielElement(eintrag);
+      if (ziel !== null) ziele.push(ziel);
+    }
+    vormerken(ziele);
   });
+
+  /**
+   * Ein `change` kann über `:has()` oder Geschwister-Selektoren überall wirken
+   * — neu gescannt wird deshalb die ganze beobachtete Wurzel. Ein
+   * `transitionend` gilt dem Element, das sich bewegt hat, und kommt nach dem
+   * Scan, der mitten in den Übergang fiel.
+   */
+  function beiEreignis(ereignis: Event): void {
+    const ziel = ereignis.target as Node | null;
+    if (ziel === null || ziel.nodeType !== ELEMENT_NODE || istEigenerLayer(ziel)) return;
+    vormerken([ereignis.type === "change" ? wurzel : (ziel as Element)]);
+  }
+
+  function lausche(ziel: EventTarget): void {
+    for (const typ of EREIGNISSE) ziel.addEventListener(typ, beiEreignis, true);
+    lauscher.push(ziel);
+  }
 
   /** Shadow Roots sind eigene Bäume; ein Beobachter am Host sieht nicht hinein. */
   function beobachteShadowRoots(dokumente: DocumentScan[]): void {
@@ -296,12 +354,21 @@ export function watch(
         if (shadow === null || beobachteteRoots.has(shadow)) continue;
         beobachteteRoots.add(shadow);
         beobachter.observe(shadow, BEOBACHTET);
+        // `change` ist nicht `composed` und käme an der Wurzel nie an.
+        lausche(shadow);
       }
     }
   }
 
-  function durchgang(): void {
+  function uhrenAus(): void {
+    if (timer !== undefined) clearTimeout(timer);
+    if (spaetestens !== undefined) clearTimeout(spaetestens);
     timer = undefined;
+    spaetestens = undefined;
+  }
+
+  function durchgang(): void {
+    uhrenAus();
     const geaendert = minimaleWurzeln(offen);
     offen.clear();
     if (geaendert.length === 0) return;
@@ -314,13 +381,21 @@ export function watch(
   }
 
   beobachter.observe(wurzel, BEOBACHTET);
+  lausche(wurzel);
   beobachteShadowRoots(aktuell.documents);
 
   return {
+    rescan(teilbaum = wurzel): void {
+      offen.add(teilbaum);
+      durchgang();
+    },
     stop(): void {
       beobachter.disconnect();
-      if (timer !== undefined) clearTimeout(timer);
-      timer = undefined;
+      for (const ziel of lauscher) {
+        for (const typ of EREIGNISSE) ziel.removeEventListener(typ, beiEreignis, true);
+      }
+      lauscher.length = 0;
+      uhrenAus();
       offen.clear();
     },
   };

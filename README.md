@@ -30,8 +30,10 @@ recorded as *not run*, with the reason, never as `PASS`.
 
 **It can stay current while the page changes.** `LiveAudit.watch()` observes the
 document and rescans **only the changed subtree**, 200 ms after the last
-mutation — collecting the DOM is the measured bottleneck, so a full rescan per
-mutation would be felt on any page that moves.
+mutation and at most 1 s after the first — collecting the DOM is the measured
+bottleneck, so a full rescan per mutation would be felt on any page that moves.
+State that changes without a mutation (`:checked`, `:has()`) is picked up on
+`change` and `transitionend`; anything else, call `LiveAudit.rescan()`.
 
 **The sidebar shows its own evidence and the page weight.** Below the counts it
 says what the last scan did — nodes scanned, rules that ran, the time — so a

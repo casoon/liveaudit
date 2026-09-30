@@ -154,6 +154,19 @@ export async function watch(root?: Element, options?: WatchOptions): Promise<Sca
   return result;
 }
 
+/**
+ * Scannt sofort neu — für Änderungen, die keine Mutation sind: Zustände über
+ * `:checked`, `:has()` oder Custom Properties, oder das Ende eines Übergangs.
+ *
+ * Im Live-Modus wird nur `root` neu gescannt und eingefügt, ohne Angabe die
+ * beobachtete Wurzel. Ohne Live-Modus wiederholt es den letzten `show()` über
+ * dessen ganzen Prüfbereich; `root` wird dann nicht beachtet.
+ */
+export async function rescan(root?: Element): Promise<void> {
+  if (live !== null) live.rescan(root);
+  else await show(zuletzt.root, zuletzt.options);
+}
+
 /** Beendet den Live-Modus. Der Layer bleibt stehen, wie er ist. */
 export function unwatch(): void {
   live?.stop();
@@ -186,6 +199,8 @@ export interface LiveAuditApi {
   show(root?: Element, options?: ShowOptions): Promise<ScanResult>;
   /** Wie `show()`, hält den Layer aber auf Stand, solange sich die Seite ändert. */
   watch(root?: Element, options?: WatchOptions): Promise<ScanResult>;
+  /** Scannt sofort neu, im Live-Modus nur `root`. */
+  rescan(root?: Element): Promise<void>;
   /** Beendet den Live-Modus; der Layer bleibt. */
   unwatch(): void;
   dock(side: DockSide): void;
@@ -202,6 +217,7 @@ const api: LiveAuditApi = {
   scan: scanDocument,
   show,
   watch,
+  rescan,
   unwatch,
   dock,
   hide,

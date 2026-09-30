@@ -53,6 +53,7 @@ Unlock a page with `?liveaudit` in the URL, then use the console or your own UI:
 ```js
 await LiveAudit.show();    // scan and draw the inspector layer
 await LiveAudit.watch();   // …and keep it current while the page changes
+await LiveAudit.rescan();  // rescan now, e.g. after a CSS-only state change
 LiveAudit.unwatch();       // stop watching; the layer stays
 LiveAudit.hide();          // remove it again
 LiveAudit.remember();      // keep it unlocked on this origin

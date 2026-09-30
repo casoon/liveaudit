@@ -45,41 +45,92 @@ export interface RenderingColumns {
 }
 
 /**
- * Zerlegt einen `rgb()`- oder `rgba()`-Wert.
- *
- * `getComputedStyle` liefert in allen aktuellen Engines diese beiden Formen;
- * moderne Farbräume (`color(display-p3 …)`, `oklch()`) erscheinen dort nur,
- * wenn sie nicht in sRGB darstellbar sind. Die werden bewusst nicht geraten —
- * sie ergeben `UNBESTIMMT`.
+ * Was `farbleser` für einen vollständig durchsichtigen Wert liefert. Keine
+ * gepackte Farbe ist negativ, der Wert landet nie in einer Spalte.
  */
-export function parseColor(wert: string): PackedColor {
+const DURCHSICHTIG = -1;
+
+/**
+ * Zerlegt einen `rgb()`- oder `rgba()`-Wert in Kanäle `0…255`, oder `null`.
+ *
+ * Das ist nur der schnelle Weg: Chrome liefert berechnete Farben im Farbraum,
+ * in dem sie geschrieben wurden — `oklch()`, `lab()`, `color(…)`. Die rechnet
+ * `farbleser` über eine Leinwand nach sRGB um.
+ */
+function zerlege(wert: string): [number, number, number, number] | null {
   const m = /^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.%]+))?\s*\)$/.exec(
     wert.trim(),
   );
-  if (m === null) return UNBESTIMMT;
+  if (m === null) return null;
 
   const kanal = (s: string) => Math.max(0, Math.min(255, Math.round(Number(s))));
-  const r = kanal(m[1] as string);
-  const g = kanal(m[2] as string);
-  const b = kanal(m[3] as string);
-
   const roh = m[4];
   let a = 255;
   if (roh !== undefined) {
     const zahl = roh.endsWith("%") ? Number(roh.slice(0, -1)) / 100 : Number(roh);
     a = Math.max(0, Math.min(255, Math.round(zahl * 255)));
   }
+  return [kanal(m[1] as string), kanal(m[2] as string), kanal(m[3] as string), a];
+}
 
+/** Ein `rgb()`/`rgba()`-Wert gepackt; durchsichtig oder anderes ist `UNBESTIMMT`. */
+export function parseColor(wert: string): PackedColor {
+  const k = zerlege(wert);
   // Vollständig durchsichtig ist keine Farbe, sondern die Abwesenheit einer.
-  if (a === 0) return UNBESTIMMT;
-  // 0 ist als Sentinel vergeben; reines Schwarz mit Alpha 0 kann nicht
-  // vorkommen, weil Alpha 0 oben abgefangen ist.
-  return (((r << 24) | (g << 16) | (b << 8) | a) >>> 0) as PackedColor;
+  if (k === null || k[3] === 0) return UNBESTIMMT;
+  return packe(k[0], k[1], k[2], k[3]);
 }
 
 /** Ob dieser Hintergrundwert deckend genug ist, um die Suche zu beenden. */
 function istDeckend(gepackt: PackedColor): boolean {
   return gepackt !== UNBESTIMMT && (gepackt & 0xff) === 0xff;
+}
+
+function packe(r: number, g: number, b: number, a: number): PackedColor {
+  // 0 ist als Sentinel vergeben; Alpha 0 kommt hier nie an.
+  return (((r << 24) | (g << 16) | (b << 8) | a) >>> 0) as PackedColor;
+}
+
+/**
+ * Liest berechnete Farbwerte in jedem Farbraum, den der Browser kennt.
+ *
+ * Was nicht `rgb()` ist, malt er auf eine 1×1-Leinwand und liest das Pixel in
+ * sRGB zurück — der Browser rechnet um, nicht wir. Die Leinwand ist ein
+ * `OffscreenCanvas` und hängt nirgends im Dokument. Je Wert wird einmal
+ * gemalt: Eine Seite hat wenige verschiedene Farben, aber viele Elemente.
+ *
+ * Ohne Leinwand bleibt ein solcher Wert `UNBESTIMMT` — nie geraten.
+ */
+function farbleser(): (wert: string) => PackedColor | typeof DURCHSICHTIG {
+  const gelesen = new Map<string, PackedColor | typeof DURCHSICHTIG>();
+  let ctx: OffscreenCanvasRenderingContext2D | null | undefined;
+
+  const male = (wert: string): PackedColor | typeof DURCHSICHTIG => {
+    if (ctx === undefined) {
+      ctx =
+        typeof OffscreenCanvas === "function"
+          ? new OffscreenCanvas(1, 1).getContext("2d", { willReadFrequently: true })
+          : null;
+    }
+    if (ctx === null) return UNBESTIMMT;
+    ctx.clearRect(0, 0, 1, 1);
+    ctx.fillStyle = wert;
+    ctx.fillRect(0, 0, 1, 1);
+    const [r = 0, g = 0, b = 0, a = 0] = ctx.getImageData(0, 0, 1, 1).data;
+    return a === 0 ? DURCHSICHTIG : packe(r, g, b, a);
+  };
+
+  return (wert) => {
+    const bekannt = gelesen.get(wert);
+    if (bekannt !== undefined) return bekannt;
+    let ergebnis: PackedColor | typeof DURCHSICHTIG;
+    const k = zerlege(wert);
+    if (k !== null) ergebnis = k[3] === 0 ? DURCHSICHTIG : packe(k[0], k[1], k[2], k[3]);
+    else if (wert === "" || wert === "transparent") ergebnis = DURCHSICHTIG;
+    else ergebnis = male(wert);
+    gelesen.set(wert, ergebnis);
+    return ergebnis;
+  };
 }
 
 /**
@@ -103,6 +154,7 @@ function effektiverHintergrund(
   el: Element,
   win: Window,
   memo: Map<Element, PackedColor>,
+  lies: (wert: string) => PackedColor | typeof DURCHSICHTIG,
 ): PackedColor {
   const kette: Element[] = [];
   let cur: Element | null = el;
@@ -119,15 +171,21 @@ function effektiverHintergrund(
       ergebnis = UNBESTIMMT;
       break;
     }
-    const eigen = parseColor(stil.backgroundColor);
-    if (istDeckend(eigen)) {
+    const eigen = lies(stil.backgroundColor);
+    // Nicht lesbar ist nicht durchsichtig: Wer hier weiter aufsteigt, landet
+    // beim Weiß des Dokuments und prüft gegen eine Fläche, die nicht da ist.
+    if (eigen === UNBESTIMMT) {
+      ergebnis = UNBESTIMMT;
+      break;
+    }
+    if (eigen !== DURCHSICHTIG && istDeckend(eigen)) {
       ergebnis = eigen;
       break;
     }
     // Teildurchsichtige Hintergründe über einem Vorfahren zu verrechnen wäre
     // möglich, aber der Fehler bei Schichtung ist schwer zu begrenzen. Ehrlich
     // ist hier UNBESTIMMT — die Regel meldet dann UNTESTED.
-    if (eigen !== UNBESTIMMT) {
+    if (eigen !== DURCHSICHTIG) {
       ergebnis = UNBESTIMMT;
       break;
     }
@@ -163,6 +221,7 @@ export function collectRendering(
   const flags = new Uint8Array(nodes);
 
   const memo = new Map<Element, PackedColor>();
+  const lies = farbleser();
 
   for (const [id, el] of idToElement) {
     if (id >= nodes) continue;
@@ -179,10 +238,11 @@ export function collectRendering(
     // Weg, die Zahl der Aufrufe zu senken, auf die es laut Messung ankommt.
     if ((f & (FLAG_DISPLAY_NONE | FLAG_VISIBILITY_HIDDEN)) !== 0) continue;
 
-    color[id] = parseColor(stil.color);
+    const vorne = lies(stil.color);
+    color[id] = vorne === DURCHSICHTIG ? UNBESTIMMT : vorne;
     fontSizePx[id] = Number.parseFloat(stil.fontSize) || 0;
     fontWeight[id] = Number.parseInt(stil.fontWeight, 10) || 0;
-    background[id] = effektiverHintergrund(el, win, memo);
+    background[id] = effektiverHintergrund(el, win, memo, lies);
   }
 
   return { color, background, fontSizePx, fontWeight, flags };
