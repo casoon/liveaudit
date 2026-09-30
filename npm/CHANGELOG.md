@@ -6,6 +6,8 @@ minor version.
 
 ## [Unreleased]
 
+**Bundled rules:** `@casoon/a11y-wasm` 0.3.0, built on `a11y-rules` 0.13.0.
+
 ### Fixed
 
 - Contrast: colours in `oklch()`, `lab()`, `color()` and other spaces are

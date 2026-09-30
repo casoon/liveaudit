@@ -30,14 +30,14 @@ importers:
   packages/browser:
     dependencies:
       '@casoon/a11y-wasm':
-        specifier: ^0.2.1
-        version: 0.2.1
+        specifier: ^0.3.0
+        version: 0.3.0
 
   packages/liveaudit:
     dependencies:
       '@casoon/a11y-wasm':
-        specifier: ^0.2.1
-        version: 0.2.1
+        specifier: ^0.3.0
+        version: 0.3.0
       '@liveaudit/browser':
         specifier: workspace:*
         version: link:../browser
@@ -325,8 +325,8 @@ packages:
     resolution: {integrity: sha512-CuNiSqg7+e1cO/GjffyMOm5Tt2jUF9CWHHnvQ/UkqvtkGfHdgwEC0wpmq7fkN3gxwpRnrAN0WzO3vREKmNolMQ==}
     engines: {node: '>=18'}
 
-  '@casoon/a11y-wasm@0.2.1':
-    resolution: {integrity: sha512-EVCoqsiC1+/ysA9gBYU9OPN3+4oxPxNFdAQyqpAfVtsrfuoQ7peRxzXbzBEo4IBz1gouJHskNXWdaiqZJB4/Lg==}
+  '@casoon/a11y-wasm@0.3.0':
+    resolution: {integrity: sha512-pwk7oblIxy3QZgEmfqaZk6quWKnClAqYQneJEGz0RbCghFGCZXQqyJUPcC/f3KGvg4T87q+K+oJjuHuvjutIFQ==}
     engines: {node: '>=22.12.0'}
 
   '@casoon/pages-theme@file:site/vendor/pages-theme':
@@ -2219,7 +2219,7 @@ snapshots:
     dependencies:
       fontkitten: 1.0.3
 
-  '@casoon/a11y-wasm@0.2.1': {}
+  '@casoon/a11y-wasm@0.3.0': {}
 
   '@casoon/pages-theme@file:site/vendor/pages-theme(@astrojs/markdown-satteri@0.4.2)(astro@7.3.5(@types/node@24.13.6)(yaml@2.9.1))':
     dependencies:

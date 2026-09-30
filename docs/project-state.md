@@ -50,7 +50,7 @@ wer sich darauf verlässt, bekommt einen `ReferenceError` statt einer Erklärung
 |---|---|
 | Konzept und Architekturentscheidungen | fertig, siehe [decisions.md](decisions.md) |
 | Performance-Messung | fertig, siehe [../spike/ERGEBNIS.md](../spike/ERGEBNIS.md) |
-| Gemeinsamer Kern in barrierlab | **veröffentlicht**, vier `a11y-*`-Crates auf crates.io, 0.12.1: Texte englisch, deutsch hinter Feature `de`; `ids/duplicate` nach WCAG 2.2 (nur mit IDREF-Verweis) |
+| Gemeinsamer Kern in barrierlab | **veröffentlicht**, vier `a11y-*`-Crates auf crates.io, 0.13.0: Geltungsbereich je Regel, Checkliste `manual/*`, heuristische Tier-3-Regeln; `@casoon/a11y-wasm` 0.3.0 |
 | Schritt 1 — Monorepo-Grundgerüst | **fertig** |
 | Schritt 2 — `packages/browser` (DOM Collector) | **fertig** |
 | Schritt 3 — WASM-Schicht (Rule Engine angebunden) | **fertig**, seit 23.09.2026 als `@casoon/a11y-wasm` ausgelagert |
@@ -320,9 +320,8 @@ Seite von innen.
 ## Bundle-Größe
 
 `dist/inspector.js` 57,8 KB roh / **20,4 KB gzip**, `dist/a11y_wasm_bg.wasm`
-197,6 KB roh / **92,4 KB gzip**. Gesamt 112,8 KB gzip (30.09.2026, mit dem
-noch unveröffentlichten Stand von `@casoon/a11y-wasm` aus liveaudit#1–#7; davor `a11y-rules`
-0.12.1 über `@casoon/a11y-wasm` 0.2.1). Das JavaScript liegt damit bei
+197,6 KB roh / **92,4 KB gzip**. Gesamt 112,8 KB gzip (30.09.2026, `a11y-rules`
+0.13.0 über `@casoon/a11y-wasm` 0.3.0). Das JavaScript liegt damit bei
 **82 % seiner Grenze von 25 KB** — das Seitengewicht hat 2,4 KB gekostet, davon
 rund 1,4 KB die Messung selbst, der Rest Tabelle, CSS und Hinweise. Die Grenze
 wurde dafür am 29.09.2026 von 20 auf 25 KB angehoben, siehe
