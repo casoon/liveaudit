@@ -55,7 +55,7 @@ importers:
     dependencies:
       '@casoon/pages-theme':
         specifier: file:./vendor/pages-theme
-        version: file:site/vendor/pages-theme(@astrojs/markdown-satteri@0.4.2)(astro@7.3.5(@types/node@24.13.6)(yaml@2.9.1))
+        version: file:site/vendor/pages-theme(@astrojs/markdown-satteri@0.4.2)(@types/node@24.13.6)(astro@7.3.5(@types/node@24.13.6)(yaml@2.9.1))
       astro:
         specifier: ^7.3.5
         version: 7.3.5(@types/node@24.13.6)(yaml@2.9.1)
@@ -2221,13 +2221,15 @@ snapshots:
 
   '@casoon/a11y-wasm@0.3.0': {}
 
-  '@casoon/pages-theme@file:site/vendor/pages-theme(@astrojs/markdown-satteri@0.4.2)(astro@7.3.5(@types/node@24.13.6)(yaml@2.9.1))':
+  '@casoon/pages-theme@file:site/vendor/pages-theme(@astrojs/markdown-satteri@0.4.2)(@types/node@24.13.6)(astro@7.3.5(@types/node@24.13.6)(yaml@2.9.1))':
     dependencies:
       '@astrojs/mdx': 8.0.1(@astrojs/markdown-satteri@0.4.2)(astro@7.3.5(@types/node@24.13.6)(yaml@2.9.1))
       astro: 7.3.5(@types/node@24.13.6)(yaml@2.9.1)
+      sharp: 0.35.5(@types/node@24.13.6)
     transitivePeerDependencies:
       - '@astrojs/markdown-remark'
       - '@astrojs/markdown-satteri'
+      - '@types/node'
 
   '@clack/core@1.5.1':
     dependencies:
@@ -2397,8 +2399,7 @@ snapshots:
 
   '@exodus/bytes@1.16.0': {}
 
-  '@img/colour@1.1.0':
-    optional: true
+  '@img/colour@1.1.0': {}
 
   '@img/sharp-darwin-arm64@0.35.5':
     optionalDependencies:
@@ -3403,7 +3404,6 @@ snapshots:
       '@img/sharp-win32-ia32': 0.35.5
       '@img/sharp-win32-x64': 0.35.5
       '@types/node': 24.13.6
-    optional: true
 
   shiki@4.4.3:
     dependencies:
