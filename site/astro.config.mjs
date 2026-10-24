@@ -8,6 +8,8 @@ export default defineConfig({
   base: "/liveaudit/",
   integrations: [
     casoonPages({
+      // package.json carries no real release; the header shows none.
+      version: false,
       name: "LiveAudit",
       description:
         "An embedded accessibility inspector: findings on the affected element, on the page as it actually runs.",
