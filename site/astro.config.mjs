@@ -14,7 +14,6 @@ export default defineConfig({
       description:
         "An embedded accessibility inspector: findings on the affected element, on the page as it actually runs.",
       tagline: "Accessibility inspector on the live page",
-      website: "https://liveaudit.casoon.de",
       repo: "casoon/liveaudit",
       license: "MIT",
       // The tool only shows what it is once it runs, so the demo takes the place

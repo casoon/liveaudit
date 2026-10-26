@@ -49,6 +49,37 @@ LiveAudit.hide();                            // nothing of it stays behind`;
     ]}
   />
 
+  <section class="screens" aria-labelledby="screens-title">
+    <h2 class="cp-label" id="screens-title">The inspector on a real page</h2>
+    <p class="hint">Captured on 2026-10-14 on the <a href={url('demo/')}>demo page</a>, which deliberately contains a fragment with known defects.</p>
+    <div class="grid">
+      <figure>
+        <img
+          src={url('screens/markers-700.webp')}
+          srcset={`${url('screens/markers-700.webp')} 700w, ${url('screens/markers.webp')} 1400w`}
+          sizes="(min-width: 760px) 50vw, 100vw"
+          width="1400"
+          height="875"
+          loading="lazy"
+          alt="LiveAudit demo: numbered markers on faulty elements of a form fragment, on the right the sidebar with 16 FAIL, 4 REVIEW and 21 UNTESTED, 56 rules ran"
+        />
+        <figcaption>Markers on the element, the sidebar beside it. Demo page of the documentation, version 0.2.0.</figcaption>
+      </figure>
+      <figure>
+        <img
+          src={url('screens/demo-700.webp')}
+          srcset={`${url('screens/demo-700.webp')} 700w, ${url('screens/demo.webp')} 1400w`}
+          sizes="(min-width: 760px) 50vw, 100vw"
+          width="1400"
+          height="875"
+          loading="lazy"
+          alt="LiveAudit demo: sidebar with counts per state and the manual checklist, with items such as alternative texts and colour as the only cue"
+        />
+        <figcaption>What cannot be decided automatically appears as UNTESTED on the manual checklist.</figcaption>
+      </figure>
+    </div>
+  </section>
+
   <Features
     heading="What makes it different"
     items={[
@@ -117,5 +148,35 @@ LiveAudit.hide();                            // nothing of it stays behind`;
     max-width: min(var(--max), 760px);
     margin: 0 auto;
     padding: 0 24px 96px;
+  }
+  .screens {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 48px 24px 0;
+  }
+  .screens .hint {
+    color: var(--muted);
+    margin: 0 0 20px;
+  }
+  .grid {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  }
+  .grid figure {
+    margin: 0;
+  }
+  .grid img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+  }
+  .grid figcaption {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 8px;
   }
 </style>
