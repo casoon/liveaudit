@@ -8,18 +8,23 @@ import {
   Facts,
   Features,
   Hero,
+  Install,
   Quickstart,
 } from "@casoon/pages-theme/components";
 import Base from "@casoon/pages-theme/layouts/Base.astro";
 import { url } from "@casoon/pages-theme/url";
+// Real capture of the demo page (site/src/pages/demo.astro) at 1000 × 680, after
+// "Show the inspector" with the contrast pass: 42 findings over 209 nodes. The narrow
+// file is the left part of the same capture, for phones. Retake both when the layer's
+// look changes.
+import inspectorShot from "../assets/inspector-demo.webp?url";
+import inspectorNarrow from "../assets/inspector-demo-narrow.webp?url";
 
-const embed = `<!-- your own domain, your own copy: there is no CDN -->
-<script type="module" src="/vendor/liveaudit/inspector.js"></script>`;
-
-const usage = `// Nothing registers until the page is unlocked with ?liveaudit
-await LiveAudit.show();                      // scan, then draw the layer
-await LiveAudit.show(el, { rendering: true }); // with the contrast pass
-LiveAudit.hide();                            // nothing of it stays behind`;
+const embed = `<!-- your own copy, on your own domain -->
+<script
+  type="module"
+  src="/vendor/liveaudit/inspector.js"
+></script>`;
 ---
 
 <Base>
@@ -27,6 +32,7 @@ LiveAudit.hide();                            // nothing of it stays behind`;
     title="Accessibility inspection where the page actually runs."
     lead="One script tag on your own site, and findings appear on the affected element — in the page's real state, after every script, embed and client-side render has had its say."
   >
+    <Install commands={[{ label: 'npm', command: 'npm install @casoon/liveaudit' }]} />
     <div class="cta">
       <Button href={url('demo/')}>See it inspect</Button>
       <Button href={url('docs/')} variant="secondary">Documentation</Button>
@@ -37,7 +43,18 @@ LiveAudit.hide();                            // nothing of it stays behind`;
       <Badge>Rust → WebAssembly</Badge>
       <Badge>no runtime framework</Badge>
     </Badges>
-    <CodeBlock slot="output" code={embed} lang="html" title="index.html" label="html" />
+    <figure slot="output" class="shot">
+      <picture>
+        <source media="(max-width: 640px)" srcset={inspectorNarrow} width="800" height="907" />
+        <img
+          src={inspectorShot}
+          width="1400"
+          height="952"
+          alt="Screenshot of the LiveAudit demo page with the inspector layer open, 42 findings. Numbered markers sit on the defective elements of a reservation form: an image without alt text, two inputs without labels, a duplicated id, a heading that skips a level, a table without headers. The dark sidebar counts 16 FAIL, 4 REVIEW, 22 UNTESTED and 0 PASS over 209 scanned nodes and 56 rules."
+        />
+      </picture>
+      <figcaption>The <a class="inline" href={url('demo/')}>demo page</a> with the inspector layer open: markers on the elements, the sidebar with the four states.</figcaption>
+    </figure>
   </Hero>
 
   <Facts
@@ -84,7 +101,7 @@ LiveAudit.hide();                            // nothing of it stays behind`;
       'Call <code>LiveAudit.show()</code> from the console or from your own toolbar.',
     ]}
   >
-    <CodeBlock code={usage} lang="js" title="on the unlocked page" label="js" />
+    <CodeBlock code={embed} lang="html" title="index.html" label="html" />
   </Quickstart>
 
   <div class="notes">
@@ -107,6 +124,25 @@ LiveAudit.hide();                            // nothing of it stays behind`;
 </Base>
 
 <style>
+  .shot {
+    margin: 0;
+  }
+  .shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .shot .inline {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .shot figcaption {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 13.5px;
+  }
   .cta {
     display: flex;
     flex-wrap: wrap;
