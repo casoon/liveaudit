@@ -1,4 +1,6 @@
 ---
+import { readFile } from "node:fs/promises";
+import config from "virtual:casoon-pages/config";
 import {
   Badge,
   Badges,
@@ -6,12 +8,15 @@ import {
   Callout,
   CodeBlock,
   Facts,
+  Faq,
   Features,
   Hero,
   Install,
   Quickstart,
+  ReleaseHighlights,
 } from "@casoon/pages-theme/components";
 import Base from "@casoon/pages-theme/layouts/Base.astro";
+import { parseChangelog } from "@casoon/pages-theme/lib/changelog";
 import { url } from "@casoon/pages-theme/url";
 // Real capture of the demo page (site/src/pages/demo.astro) at 1000 × 680, after
 // "Show the inspector" with the contrast pass: 42 findings over 209 nodes. The narrow
@@ -25,6 +30,13 @@ const embed = `<!-- your own copy, on your own domain -->
   type="module"
   src="/vendor/liveaudit/inspector.js"
 ></script>`;
+
+// Skip "Unreleased": it has no version to show as "New in v…" yet.
+const latestRelease = config.changelog
+  ? parseChangelog(await readFile(config.changelog, "utf8")).find(
+      (r) => r.version.toLowerCase() !== "unreleased",
+    )
+  : undefined;
 ---
 
 <Base>
@@ -152,6 +164,29 @@ const embed = `<!-- your own copy, on your own domain -->
       </p>
     </Callout>
   </div>
+
+  {latestRelease && <ReleaseHighlights release={latestRelease} />}
+
+  <Faq
+    items={[
+      {
+        q: "Is LiveAudit an accessibility overlay?",
+        a: "No. It inspects; it does not repair. Nothing about the page is modified — no data attributes for element identification and no inline styles on the target, just an in-memory mapping to a shadow-root layer drawn on top.",
+      },
+      {
+        q: "Can I load it from a CDN?",
+        a: "No, deliberately not. LiveAudit is self-hosted: you serve inspector.js and a11y_wasm_bg.wasm from your own domain, so a centrally hosted script never becomes a permanent dependency of every site that embeds it.",
+      },
+      {
+        q: "Why isn't contrast checked by default?",
+        a: "Contrast needs a second, rendering-aware pass that costs 1.9x to 4.6x the plain collector, so it stays opt-in via scan(root, { rendering: true }). Without it, contrast rules are recorded as not run, never as a silent PASS.",
+      },
+      {
+        q: "What happens with things no rule can decide, like alt text quality?",
+        a: "They become a checklist, not silence: criteria such as captions, alt text quality or time limits appear once per page as UNTESTED under manual/* whenever the page contains something they apply to.",
+      },
+    ]}
+  />
 </Base>
 
 <style>
