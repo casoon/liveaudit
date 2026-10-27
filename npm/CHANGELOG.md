@@ -4,6 +4,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Each release
 names the bundled rule set; a change to it that changes findings is at least a
 minor version.
 
+## [0.2.1] - 2026-10-27
+
+**Bundled rules:** unchanged — `@casoon/a11y-wasm` 0.3.0, built on `a11y-rules` 0.13.0.
+
+### Changed
+
+- **Releases:** the package is published from a release workflow with npm Trusted Publishing (provenance, no stored token), after approval in the `npm` environment.
+
 ## [0.2.0] - 2026-09-30
 
 **Bundled rules:** `@casoon/a11y-wasm` 0.3.0, built on `a11y-rules` 0.13.0.
