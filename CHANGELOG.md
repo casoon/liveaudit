@@ -8,6 +8,6 @@ package keeps its own release history in [npm/CHANGELOG.md](npm/CHANGELOG.md).
 
 ### Changed
 
-- **Pages:** the project site uses the current shared theme (0.12.5).
+- **Pages:** the project site uses the current shared theme (0.12.6).
 - **Site:** the footer follows the page language instead of always showing German text, and the
   start page carries a release teaser and an FAQ (theme 0.11.1).
