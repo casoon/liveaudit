@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Baumbereiche</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <main>
+      <h1>Baumbereiche</h1>
+      <!-- Dieselbe ID im Dokument und im Shadow Root, je mit eigenem Verweis. -->
+      <span id="hinweis">Hinweis im Dokument</span>
+      <button type="button" id="aussen" aria-describedby="hinweis">Außen</button>
+
+      <!-- Verweist auf eine ID, die es nur im Shadow Root gibt. -->
+      <button type="button" id="fremd" aria-describedby="nur-drin">Fremd</button>
+
+      <!-- Ein zugewiesenes Licht-Kind verweist auf das Dokument. -->
+      <my-karte id="wirt"><button type="button" id="licht" aria-describedby="hinweis">Licht</button></my-karte>
+    </main>
+    <script>
+      customElements.define(
+        "my-karte",
+        class extends HTMLElement {
+          constructor() {
+            super();
+            this.attachShadow({ mode: "open" }).innerHTML =
+              '<span id="hinweis">Hinweis im Schatten</span>' +
+              '<span id="nur-drin">Nur im Schatten</span>' +
+              '<button type="button" id="innen" aria-describedby="hinweis">Innen</button>' +
+              '<slot></slot>';
+          }
+        },
+      );
+    </script>
+    <script type="module">
+      import { enable } from "../../../dist/inspector.js";
+
+      enable();
+    </script>
+  </body>
+</html>

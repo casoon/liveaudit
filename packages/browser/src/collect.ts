@@ -83,6 +83,16 @@ export interface ArenaColumns {
   tagDict: string;
   attrDict: string;
   nodes: number;
+  /**
+   * Der Baumbereich je Knoten: `0` ist der Baum der Wurzel, jede andere Zahl ein
+   * Shadow Root (je Scan eindeutig). `null`, solange kein Shadow Root betreten
+   * wurde — dann liegt alles in Bereich 0 und die Spalte wäre nur Ballast.
+   *
+   * Ein per `<slot>` eingesetzter Knoten trägt den Bereich des Baums, in dem er
+   * steht, nicht den des Slots: ID-Verweise folgen dem Baum, der flache Baum
+   * (Kontrast, `assignedSlot`) ist eine andere Frage.
+   */
+  scopes: Uint32Array | null;
 }
 
 /** Ein angetroffenes `<iframe>`. Ein Frame ist ein eigenes Dokument mit eigenem
@@ -215,8 +225,10 @@ export function collect(root: Element): Collected {
   // wächst von selbst, wenn Shadow Roots über die Schätzung hinausgehen.
   const stackNode: Node[] = new Array(estimate + 1);
   let stackParent = new Int32Array(estimate + 1);
+  let stackScope = new Uint32Array(estimate + 1);
   stackNode[0] = root;
   stackParent[0] = -1;
+  stackScope[0] = 0;
   let sp = 1;
 
   const growStack = (need: number): void => {
@@ -226,7 +238,23 @@ export function collect(root: Element): Collected {
     const next = new Int32Array(cap);
     next.set(stackParent);
     stackParent = next;
+    stackScope = growU32(stackScope, cap);
   };
+
+  // Baumbereiche. Der Baum der Wurzel ist 0, egal ob Dokument oder Shadow Root
+  // (ein Teilbaum-Scan im Live-Modus beginnt mitten in einem Shadow Root).
+  // Jeder weitere Baum bekommt beim ersten Antreffen die nächste Zahl.
+  const scopeOfRoot = new Map<Node, number>([[root.getRootNode(), 0]]);
+  let scopeCount = 1;
+  const scopeFor = (tree: Node): number => {
+    let id = scopeOfRoot.get(tree);
+    if (id === undefined) {
+      id = scopeCount++;
+      scopeOfRoot.set(tree, id);
+    }
+    return id;
+  };
+  let scopes: Uint32Array<ArrayBuffer> | null = null;
 
   let i = 0;
   while (sp > 0) {
@@ -235,10 +263,16 @@ export function collect(root: Element): Collected {
     const node = stackNode[sp]!;
     // biome-ignore lint/style/noNonNullAssertion: parallel zu stackNode gesetzt.
     const p = stackParent[sp]!;
+    // biome-ignore lint/style/noNonNullAssertion: parallel zu stackNode gesetzt.
+    const scope = stackScope[sp]!;
     const type = node.nodeType;
     if (type !== ELEMENT_NODE && type !== TEXT_NODE) continue;
 
     let kids: ArrayLike<Node> | null = null;
+    // Der Bereich, in dem die Kinder stehen. Nur die beiden Fälle unten
+    // ändern ihn.
+    let kidScope = scope;
+    let slotted = false;
     let idx: number;
 
     if (type === ELEMENT_NODE) {
@@ -252,6 +286,11 @@ export function collect(root: Element): Collected {
       if (i === nodeCap) growNodes();
       idx = i++;
       parent[idx] = p;
+      if (scope !== 0 || scopes !== null) {
+        scopes ??= new Uint32Array(nodeCap);
+        if (scopes.length < nodeCap) scopes = growU32(scopes, nodeCap);
+        scopes[idx] = scope;
+      }
       tag[idx] = intern(tagDict, tagNames, ln);
       textOff[idx] = blobN;
       textLen[idx] = 0;
@@ -277,10 +316,12 @@ export function collect(root: Element): Collected {
         // Flacher Baum: Licht-Kinder erreichen die Arena über <slot>, nicht
         // über den Host — jedes Element erscheint damit genau einmal.
         kids = shadow.childNodes;
+        kidScope = scopeFor(shadow);
       } else if (ln === "slot") {
         // assignedNodes({flatten:true}) liefert die zugewiesenen Knoten, und
         // wenn nichts zugewiesen ist, den Ersatzinhalt des Slots.
         kids = (node as HTMLSlotElement).assignedNodes({ flatten: true });
+        slotted = true;
       } else if (ln === "iframe") {
         frames.push({
           node: idx,
@@ -295,6 +336,11 @@ export function collect(root: Element): Collected {
       if (i === nodeCap) growNodes();
       idx = i++;
       parent[idx] = p;
+      if (scope !== 0 || scopes !== null) {
+        scopes ??= new Uint32Array(nodeCap);
+        if (scopes.length < nodeCap) scopes = growU32(scopes, nodeCap);
+        scopes[idx] = scope;
+      }
       tag[idx] = intern(tagDict, tagNames, TEXT_TAG);
       const before = blobN;
       textOff[idx] = put((node as Text).data);
@@ -306,8 +352,13 @@ export function collect(root: Element): Collected {
       growStack(sp + kids.length);
       for (let k = kids.length - 1; k >= 0; k--) {
         // biome-ignore lint/style/noNonNullAssertion: k < kids.length.
-        stackNode[sp] = kids[k]!;
+        const kid = kids[k]!;
+        stackNode[sp] = kid;
         stackParent[sp] = idx;
+        // Zugewiesene Knoten stehen im Baum ihres Hosts, Ersatzinhalt im Baum
+        // des Slots; `assignedNodes({flatten:true})` liefert beides, auch über
+        // weitergereichte Slots hinweg. Der Baum des Knotens entscheidet.
+        stackScope[sp] = slotted ? scopeFor(kid.getRootNode()) : kidScope;
         sp++;
       }
     }
@@ -328,6 +379,7 @@ export function collect(root: Element): Collected {
       tagDict: tagNames.join(SEP),
       attrDict: attrNames.join(SEP),
       nodes: i,
+      scopes: scopes === null ? null : scopes.subarray(0, i),
     },
     elementToId,
     idToElement,

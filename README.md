@@ -31,6 +31,9 @@ heuristic checks — reading order, endless animation, reflow, pointer-only
 controls, obscured focus, target size — which report `REVIEW`, never `FAIL`.
 Focus visibility needs a pass that moves focus, so it is its own opt-in:
 `{ rendering: true, focus: true }`.
+Four further rules need a measurement that touches the page for a moment — pasting into
+password fields, focus under fixed bars, text spacing — and are opt-in too:
+`{ rendering: true, probes: ["paste", "focus", "spacing"] }`. Each restores what it touched.
 
 **What no machine can decide becomes a checklist**, not silence: captions,
 alt text quality, error messages, time limits and the like appear once per

@@ -38,7 +38,14 @@ setOwnResources([import.meta.url, new URL("a11y_wasm_bg.wasm", import.meta.url).
 export type { ArenaColumns, Collected, FrameRef } from "@liveaudit/browser/collect";
 export { collect, countNodes, HOST_TAG_NAME } from "@liveaudit/browser/collect";
 export * from "@liveaudit/browser/report";
-export type { DocumentScan, ScanOptions, ScanResult, UntestedScope } from "@liveaudit/browser/scan";
+export type {
+  DocumentScan,
+  ProbeName,
+  ProbeReport,
+  ScanOptions,
+  ScanResult,
+  UntestedScope,
+} from "@liveaudit/browser/scan";
 export type { DockSide } from "@liveaudit/ui";
 
 /** Was `show()` über den Scan hinaus steuert. */

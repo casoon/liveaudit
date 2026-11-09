@@ -11,6 +11,7 @@
 import { Scan } from "@casoon/a11y-wasm";
 
 import { collect, type FrameRef } from "./collect.ts";
+import { applyProbes, collectProbes, type ProbeName, type ProbeReport } from "./probes.ts";
 import { collectRendering, measureFocus } from "./rendering.ts";
 import type { Report } from "./report.ts";
 
@@ -39,6 +40,12 @@ export interface DocumentScan {
   elementToId: WeakMap<Element, number>;
   idToElement: Map<number, Element>;
   untested: UntestedScope[];
+  /**
+   * Was die Messungen für die seitenabhängigen Regeln geliefert haben — nur mit
+   * `rendering`. Eine Spalte, die hier fehlt, ist nicht gemessen worden, und die
+   * zugehörige Regel steht im Bericht als nicht gelaufen.
+   */
+  probes?: ProbeReport;
 }
 
 export interface ScanResult {
@@ -68,7 +75,27 @@ export interface ScanOptions {
    * Ohne ihn steht die Fokus-Sichtbarkeit als `UNTESTED` im Bericht.
    */
   focus?: boolean;
+  /**
+   * Messungen für die seitenabhängigen Regeln, die die Seite für einen Moment
+   * verändern — Opt-in, nur mit `rendering`:
+   *
+   * - `"paste"`: schickt ein synthetisches `paste` an Passwort- und Codefelder
+   *   (`auth/paste-blocked`). Handler laufen, der Wert des Feldes wird kurz
+   *   geschrieben und zurückgesetzt.
+   * - `"focus"`: fokussiert bis zu 300 Bedienelemente und scrollt sie ins Bild
+   *   (`focus/obscured`, `focus/obscured-enhanced`). Fokus und Scrollposition
+   *   kommen zurück; `focus`/`blur`-Handler der Seite laufen.
+   * - `"spacing"`: überschreibt den Textabstand nach WCAG 1.4.12 über ein
+   *   adoptiertes Stylesheet (`text-spacing/clipped`). Kein Knoten und kein
+   *   Attribut ändert sich.
+   *
+   * Ohne Eintrag steht die zugehörige Regel als nicht gelaufen im Bericht. Die
+   * lesenden Messungen (Rahmen, Drehung der Wurzel) laufen mit `rendering` immer.
+   */
+  probes?: readonly ProbeName[];
 }
+
+export type { ProbeName, ProbeReport };
 
 interface Pending {
   root: Element;
@@ -116,16 +143,21 @@ export function scan(
     );
 
     let report: Report;
+    let probes: ProbeReport | undefined;
     try {
+      if (c.scopes !== null) arena.withScopes(c.scopes);
       if (options.rendering === true) {
         const view = pending.root.ownerDocument.defaultView;
         if (view !== null) {
           const renderingStarted = performance.now();
           const r = collectRendering(collected.idToElement, c.nodes, view);
           if (options.focus === true) measureFocus(collected.idToElement, r, view);
+          const gemessen = collectProbes(collected, r, view, options.probes ?? []);
+          probes = gemessen.report;
           renderingMs += performance.now() - renderingStarted;
           arena.withRendering(r.color, r.background, r.fontSizePx, r.fontWeight, r.flags);
           arena.withLayout(r.layoutFlags, r.order, r.minWidthPx, r.bounds);
+          applyProbes(arena, gemessen.columns);
         }
       }
       report = arena.run() as Report;
@@ -151,6 +183,7 @@ export function scan(
       elementToId: collected.elementToId,
       idToElement: collected.idToElement,
       untested,
+      probes,
     });
   }
 

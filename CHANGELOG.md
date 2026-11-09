@@ -6,7 +6,21 @@ package keeps its own release history in [npm/CHANGELOG.md](npm/CHANGELOG.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Collector:** the page-dependent probes of `a11y-rules` 0.28.3 (liveaudit#16). With `rendering: true`
+  the collector reports frame reachability (`frames/cross-origin`) and the transform of `html`/`body`
+  (`orientation/root-rotated`). `probes: ["paste", "focus", "spacing"]` opts in to the probes that touch
+  the page for a moment (`auth/paste-blocked`, `focus/obscured`, `focus/obscured-enhanced`,
+  `text-spacing/clipped`); each restores focus, scroll, field values and styles. Without the option those
+  rules stay under "Rules that did not run". `DocumentScan.probes` lists the filled columns and any cap.
+- **Collector:** the tree scope of each node is passed to the rules (liveaudit#10). The same ID in a shadow
+  root and in the document is no longer a duplicate, and an ID reference only reaches targets in its own tree.
+
 ### Changed
+
+- **Rules:** `@casoon/a11y-wasm` 0.16.0 replaces 0.15.2. A heuristic without layout columns is now recorded as
+  not run instead of an `UNTESTED` finding on the root.
 
 - **Rules:** `@casoon/a11y-wasm` 0.15.2 (`a11y-rules` 0.28.3, 169 rule ids) replaces 0.3.0. New ids
   whose probes the collector does not deliver yet (`frames/cross-origin`, `orientation/root-rotated`,

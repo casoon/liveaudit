@@ -71,7 +71,9 @@ await enable().watch();
 More of the API: `scan()` returns the findings without drawing anything;
 `show(root, { rendering: true })` adds contrast and the layout heuristics;
 `{ rendering: true, focus: true }` also measures focus visibility — it focuses
-every control once and restores focus after; `dock("left")` moves
+every control once and restores focus after;
+`probes: ["paste", "focus", "spacing"]` (with `rendering`) runs the measurements for
+`auth/paste-blocked`, `focus/obscured` and `text-spacing/clipped`, each restoring what it touched; `dock("left")` moves
 the sidebar. Full reference: <https://casoon.github.io/liveaudit/docs/getting-started/api/>
 
 ## What the sidebar shows

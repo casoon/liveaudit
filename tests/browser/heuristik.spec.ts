@@ -55,9 +55,16 @@ test("was richtig gebaut ist, bleibt ruhig", async ({ page }) => {
   expect(b.a ?? []).not.toContain("focus/obscured:review");
 });
 
-test("ohne Fokus-Durchgang ist die Fokus-Sichtbarkeit UNTESTED", async ({ page }) => {
+test("ohne Fokus-Durchgang ist die Fokus-Sichtbarkeit nicht gelaufen", async ({ page }) => {
+  // Seit a11y-wasm 0.16 steht sie als nicht gelaufen im Bericht, nicht mehr als
+  // UNTESTED-Befund an der Wurzel.
+  const nichtGelaufen = await page.evaluate(async () => {
+    const e = await window.LiveAudit.scan(document.documentElement, { rendering: true });
+    return e.documents[0]?.report.rule_runs.find((r) => r.rule_id === "focus/indicator-missing")
+      ?.not_run;
+  });
+  expect(nichtGelaufen).toBe("capability_missing");
   const b = await befunde(page, false);
-  expect(b.html).toContain("focus/indicator-unmeasured:untested");
   expect(b["ohne-fokus"] ?? []).not.toContain("focus/indicator-missing:review");
 });
 

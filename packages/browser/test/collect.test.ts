@@ -142,6 +142,92 @@ describe("Shadow DOM", () => {
   });
 });
 
+describe("Baumbereiche", () => {
+  /** Der Bereich des Knotens zu `el`. */
+  const scopeOf = (c: ReturnType<typeof collect>, el: Element): number =>
+    c.columns.scopes?.[c.elementToId.get(el) as number] as number;
+
+  it("lässt die Spalte weg, solange kein Shadow Root betreten wurde", () => {
+    const doc = parse("<html><body><p>Text</p></body></html>");
+    assert.equal(collect(doc.documentElement).columns.scopes, null);
+  });
+
+  it("gibt jedem Shadow Root einen eigenen Bereich, das Dokument bleibt 0", () => {
+    const doc = parse("<html><body><span id='a'>a</span><my-a></my-a><my-b></my-b></body></html>");
+    const a = doc.querySelector("my-a") as Element;
+    const b = doc.querySelector("my-b") as Element;
+    a.attachShadow({ mode: "open" }).innerHTML = "<b id='in-a'>x</b><i>y</i>";
+    b.attachShadow({ mode: "open" }).innerHTML = "<b id='in-b'>x</b>";
+
+    const c = collect(doc.documentElement);
+    const inA = (a.shadowRoot as ShadowRoot).querySelector("b") as Element;
+    const inB = (b.shadowRoot as ShadowRoot).querySelector("b") as Element;
+
+    assert.equal(c.columns.scopes?.length, c.columns.nodes);
+    assert.equal(scopeOf(c, doc.querySelector("span") as Element), 0);
+    assert.equal(scopeOf(c, a), 0, "der Host steht im Baum seines Elternteils");
+    assert.notEqual(scopeOf(c, inA), 0);
+    assert.notEqual(scopeOf(c, inB), 0);
+    assert.notEqual(scopeOf(c, inA), scopeOf(c, inB));
+    // Alles unterhalb des Shadow Roots, auch Textknoten und Geschwister.
+    assert.equal(
+      scopeOf(c, (a.shadowRoot as ShadowRoot).querySelector("i") as Element),
+      scopeOf(c, inA),
+    );
+  });
+
+  it("lässt einen zugewiesenen Knoten im Baum seines Hosts, nicht in dem des Slots", () => {
+    const doc = parse("<html><body><my-card><span id='licht'>Licht</span></my-card></body></html>");
+    const host = doc.querySelector("my-card") as Element;
+    host.attachShadow({ mode: "open" }).innerHTML = "<div id='schatten'><slot></slot></div>";
+
+    const c = collect(doc.documentElement);
+    const licht = doc.getElementById("licht") as Element;
+    const schatten = (host.shadowRoot as ShadowRoot).getElementById("schatten") as Element;
+    const slot = (host.shadowRoot as ShadowRoot).querySelector("slot") as Element;
+
+    assert.notEqual(scopeOf(c, schatten), 0);
+    assert.equal(scopeOf(c, slot), scopeOf(c, schatten));
+    // Im flachen Baum hängt das Licht-Kind unter dem Slot, seine IDs gehören aber dem Dokument.
+    assert.equal(c.columns.parent[c.elementToId.get(licht) as number], c.elementToId.get(slot));
+    assert.equal(scopeOf(c, licht), 0);
+  });
+
+  it("gibt dem Ersatzinhalt eines Slots den Bereich des Slots", () => {
+    const doc = parse("<html><body><my-card></my-card></body></html>");
+    const host = doc.querySelector("my-card") as Element;
+    host.attachShadow({ mode: "open" }).innerHTML = "<slot><em>Ersatz</em></slot>";
+
+    const c = collect(doc.documentElement);
+    const em = (host.shadowRoot as ShadowRoot).querySelector("em") as Element;
+    assert.notEqual(scopeOf(c, em), 0);
+  });
+
+  it("nummeriert verschachtelte Shadow Roots einzeln und beginnt in einem Teilbaum bei 0", () => {
+    const doc = parse("<html><body><my-a></my-a></body></html>");
+    const a = doc.querySelector("my-a") as Element;
+    const wurzelA = a.attachShadow({ mode: "open" });
+    wurzelA.innerHTML = "<my-b></my-b>";
+    (wurzelA.querySelector("my-b") as Element).attachShadow({ mode: "open" }).innerHTML =
+      "<u>tief</u>";
+
+    const c = collect(doc.documentElement);
+    const tief = (
+      (wurzelA.querySelector("my-b") as Element).shadowRoot as ShadowRoot
+    ).querySelector("u") as Element;
+    const bereiche = new Set([
+      0,
+      scopeOf(c, wurzelA.querySelector("my-b") as Element),
+      scopeOf(c, tief),
+    ]);
+    assert.equal(bereiche.size, 3);
+
+    // Ein Teilbaum-Scan mitten in einem Shadow Root: sein eigener Baum ist 0.
+    const teil = collect(wurzelA.querySelector("my-b") as Element);
+    assert.equal(teil.columns.scopes?.[0], 0);
+  });
+});
+
 describe("iframes", () => {
   it("betritt kein <iframe>, sondern meldet es als eigenen Geltungsbereich", () => {
     const doc = parse('<html><body><iframe src="/eingebettet"></iframe></body></html>');

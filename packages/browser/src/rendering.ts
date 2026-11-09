@@ -66,7 +66,7 @@ export interface RenderingColumns {
  * Geometrie erhoben: `getBoundingClientRect()` je Knoten kostet so viel wie
  * der ganze Collector.
  */
-function perTabErreichbar(el: Element): boolean {
+export function perTabErreichbar(el: Element): boolean {
   const tabindex = el.getAttribute("tabindex");
   if (tabindex !== null && tabindex.trim() !== "" && !Number.isNaN(Number(tabindex))) {
     return Number(tabindex) >= 0;
