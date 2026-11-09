@@ -18,12 +18,30 @@ export interface Befund {
 }
 
 export interface ScanErgebnis {
-  documents: { report: { findings: Befund[] }; idToElement: Map<number, Element> }[];
+  documents: {
+    report: {
+      findings: Befund[];
+      rule_runs: { rule_id: string; not_run?: string; reason?: string; findings: number }[];
+    };
+    idToElement: Map<number, Element>;
+    probes?: {
+      columns: Record<string, number>;
+      skipped: { probe: string; reason: string; count?: number }[];
+      focusScroll?: string;
+    };
+  }[];
+}
+
+/** Die Optionen, die die Browser-Tests an `scan()` geben. */
+export interface ScanOptionen {
+  rendering?: boolean;
+  focus?: boolean;
+  probes?: ("paste" | "focus" | "spacing")[];
 }
 
 /** Nur das, was die Tests von der öffentlichen Schnittstelle brauchen. */
 interface LiveAuditApi {
-  scan(root?: Element, options?: { rendering?: boolean }): Promise<ScanErgebnis>;
+  scan(root?: Element, options?: ScanOptionen): Promise<ScanErgebnis>;
   show(root?: Element, options?: { rendering?: boolean }): Promise<unknown>;
   watch(root?: Element, options?: { rendering?: boolean; debounceMs?: number }): Promise<unknown>;
   rescan(root?: Element): Promise<void>;

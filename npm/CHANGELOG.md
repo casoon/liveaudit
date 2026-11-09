@@ -4,6 +4,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Each release
 names the bundled rule set; a change to it that changes findings is at least a
 minor version.
 
+## [Unreleased]
+
+### Added
+
+- **Scan:** `probes: ["paste", "focus", "spacing"]` runs the page-touching probes for `auth/paste-blocked`,
+  `focus/obscured`, `focus/obscured-enhanced` and `text-spacing/clipped`; opt-in, needs `rendering: true`.
+  Frame access and the root transform are measured with `rendering: true`.
+- **Scan:** shadow roots are separate ID scopes: the same ID in two trees is not a duplicate.
+
 ## [0.2.1] - 2026-10-27
 
 **Bundled rules:** unchanged — `@casoon/a11y-wasm` 0.3.0, built on `a11y-rules` 0.13.0.

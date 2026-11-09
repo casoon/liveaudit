@@ -158,6 +158,48 @@ describe("Nicht gelaufen ist nicht bestanden", () => {
   });
 });
 
+describe("Baumbereiche in der ID-Auflösung", () => {
+  // Dieselbe ID in einem Shadow Root ist kein Duplikat, und ein Verweis
+  // trifft nur Ziele im eigenen Baum (liveaudit#10).
+  const SEITE = `<!doctype html><html lang="de"><head><title>T</title></head><body>
+    <h1>T</h1><span id="x">im Dokument</span>
+    <button type="button" aria-describedby="x">Knopf</button>
+    <my-card></my-card></body></html>`;
+
+  const befunde = (doc: Document, regel: string) =>
+    scan(doc.documentElement).documents[0]?.report.findings.filter((f) => f.rule_id === regel) ??
+    [];
+
+  it("meldet dieselbe ID in zwei Bäumen nicht als Duplikat", () => {
+    const doc = parse(SEITE);
+    (doc.querySelector("my-card") as Element).attachShadow({ mode: "open" }).innerHTML =
+      '<span id="x">im Schatten</span><button type="button" aria-describedby="x">Auch</button>';
+
+    assert.deepEqual(befunde(doc, "ids/duplicate"), []);
+    assert.deepEqual(befunde(doc, "aria/reference-missing"), []);
+  });
+
+  it("meldet dieselbe ID im selben Baum weiterhin als Duplikat", () => {
+    const doc = parse(SEITE);
+    (doc.querySelector("my-card") as Element).attachShadow({ mode: "open" }).innerHTML =
+      '<span id="y">a</span><span id="y">b</span><button type="button" aria-describedby="y">K</button>';
+
+    assert.equal(befunde(doc, "ids/duplicate").length > 0, true);
+  });
+
+  it("löst einen Verweis nicht in einen fremden Baum auf", () => {
+    const doc = parse(
+      `<!doctype html><html lang="de"><head><title>T</title></head><body><h1>T</h1>
+        <button type="button" aria-describedby="nur-im-schatten">Knopf</button>
+        <my-card></my-card></body></html>`,
+    );
+    (doc.querySelector("my-card") as Element).attachShadow({ mode: "open" }).innerHTML =
+      '<span id="nur-im-schatten">drin</span>';
+
+    assert.equal(befunde(doc, "aria/reference-missing").length > 0, true);
+  });
+});
+
 describe("iframes", () => {
   it("scannt ein Same-Origin-Frame als eigenes Dokument mit eigenem ID-Raum", () => {
     const doc = parse(

@@ -53,6 +53,13 @@ Technisch prüfbar, inhaltlich nicht zuverlässig automatisch beurteilbar:
   nicht und stehen mit `capability_missing` als nicht gelaufen im Bericht — nicht
   als bestanden. Ein `UNTESTED`-Befund entsteht erst, wenn der Durchgang lief und
   eine Farbe trotzdem nicht bestimmbar war (`contrast/text-undetermined`).
+- **Sonden, die die Seite berühren, sind Opt-in** (`probes: ["paste", "focus", "spacing"]`, nur mit
+  `rendering`). Sie stellen Fokus, Scrollposition, Feldwerte und Stile in einem `finally` wieder her;
+  der Textabstand läuft über ein adoptiertes Stylesheet, ohne Knoten oder Attribut zu ändern. Nicht
+  zurücknehmen lässt sich, was Handler der Seite dabei tun (`focus`, `blur`, `paste`, `scroll`). Die
+  Fokus-Messung ist auf 300 Bedienelemente begrenzt, die Textabstand-Messung auf 5000 Elemente; der
+  Deckel steht in `DocumentScan.probes.skipped`. Das Ereignis der Einfüge-Probe ist synthetisch
+  (`isTrusted` falsch).
 - **`getBoundingClientRect()` je Knoten wird nicht erhoben**, nur an
   Bedienelementen für Zielgröße und Verdeckung. Geometrie je Knoten kostete
   noch einmal so viel wie der ganze Collector.

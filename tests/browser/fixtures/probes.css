@@ -1,0 +1,55 @@
+body {
+  margin: 0;
+  padding: 80px 24px 24px;
+  font:
+    16px / 1.4 Arial,
+    sans-serif;
+  background: #fff;
+  color: #111;
+}
+#kopf {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #222;
+  color: #fff;
+  z-index: 10;
+}
+#kopf-text {
+  padding: 20px 24px;
+}
+#abstand {
+  transition: all 0.5s;
+}
+/* Ein Satz, der bei 16 px knapp in eine Zeile passt und mit dem Textabstand von
+   WCAG 1.4.12 umbricht; die Höhe reicht für eine Zeile, nicht für zwei. */
+#eng {
+  width: 300px;
+  height: 24px;
+  overflow: hidden;
+  background: #eee;
+}
+/* Schneidet schon vorher ab -- gehört nicht dem Textabstand. */
+#vorher {
+  width: 300px;
+  height: 20px;
+  overflow: hidden;
+  background: #eee;
+}
+#abstand-frei {
+  width: 300px;
+  background: #eee;
+}
+#vorplatz {
+  height: 600px;
+}
+#platz {
+  height: 1800px;
+}
+iframe {
+  width: 200px;
+  height: 60px;
+  border: 1px solid #999;
+}

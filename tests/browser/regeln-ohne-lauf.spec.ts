@@ -25,7 +25,7 @@ test("ohne Darstellungsdurchgang nennt die Seitenleiste die Tier-3-Regeln", asyn
 
   // Kontrast, die Heuristiken über Layout und Geometrie (liveaudit#6) und die
   // Regeln, die Sonden oder Stylesheets brauchen (liveaudit#8).
-  await expect(page.locator(`${GRUPPE} h3`)).toHaveText("Rules that did not run (27)");
+  await expect(page.locator(`${GRUPPE} h3`)).toHaveText("Rules that did not run (26)");
   const eintraege = await page.locator(`${GRUPPE} li`).allInnerTexts();
   expect(eintraege.join(" ")).toContain("contrast/text-insufficient");
   expect(eintraege.join(" ")).toContain("contrast/text-undetermined");
@@ -39,14 +39,15 @@ test("mit Darstellungsdurchgang bleiben die Regeln ohne Sonde in der Gruppe", as
     await window.LiveAudit.show(undefined, { rendering: true });
   });
 
-  // Der Durchgang bedient Kontrast und Geometrie. Was bleibt, hat der Host
-  // (noch) keine Sonde: die fünf Stylesheet-Regeln und vier Regeln aus
-  // a11y-rules 0.28 mit eigenen Sonden. Sie bleiben sichtbar, nicht still.
+  // Der Durchgang bedient Kontrast und Geometrie, dazu die beiden lesenden
+  // Messungen (Rahmen, Drehung der Wurzel; liveaudit#16). Was bleibt: die
+  // Stylesheet-Regeln und die Regeln, deren Messung die Seite berührt und
+  // ausdrücklich anzufordern ist (`probes`). Sie bleiben sichtbar, nicht still.
   await expect(page.locator(`${GRUPPE} h3`)).toHaveText("Rules that did not run (9)");
   const eintraege = (await page.locator(`${GRUPPE} li`).allInnerTexts()).join(" ");
   expect(eintraege).not.toContain("contrast/");
   expect(eintraege).toContain("text-spacing/clipped");
   expect(eintraege).toContain("focus/obscured-enhanced");
-  expect(eintraege).toContain("orientation/root-rotated");
-  expect(eintraege).toContain("frames/cross-origin");
+  expect(eintraege).not.toContain("orientation/root-rotated");
+  expect(eintraege).not.toContain("frames/cross-origin");
 });

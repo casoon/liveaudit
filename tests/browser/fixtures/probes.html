@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Messungen für seitenabhängige Regeln</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="probes.css" />
+  </head>
+  <body>
+    <header id="kopf"><div id="kopf-text">Feste Kopfleiste</div></header>
+    <main id="inhalt">
+      <h1>Messungen</h1>
+
+      <!-- focus/obscured: liegt oben auf der Seite; ist die Seite weit unten
+           gescrollt, scrollt scrollIntoView(nearest) das Element an die obere
+           Kante, unter die Leiste. -->
+      <button id="oben" type="button">Oben, unter der Leiste</button>
+
+      <form id="formular" action="#" onsubmit="return false">
+        <!-- auth/paste-blocked -->
+        <label>Gesperrt <input id="gesperrt" type="password" autocomplete="current-password" value="geheim" /></label>
+        <label>Frei <input id="frei" type="password" autocomplete="current-password" /></label>
+        <!-- bricht ab und fügt selbst ein: kein Befund -->
+        <label>Selbst <input id="selbst" type="password" autocomplete="current-password" /></label>
+        <!-- Ein Handler, der Dialoge öffnet, darf nichts anzeigen. -->
+        <label>Dialog <input id="dialog" type="password" autocomplete="one-time-code" /></label>
+      </form>
+
+      <!-- text-spacing/clipped -->
+      <div id="eng">Dieser Satz passt knapp in eine Zeile.</div>
+      <div id="vorher">Dieser Satz ist schon vorher zu lang für den Kasten, der ihn trägt.</div>
+      <div id="abstand-frei">Hier schneidet nichts ab.</div>
+
+      <!-- frames/cross-origin: ein lesbarer und ein fremder Rahmen -->
+      <iframe id="lesbar" title="Lesbar" srcdoc="<p>Drin</p>"></iframe>
+      <iframe id="fremd" title="Fremd" src="https://example.com/"></iframe>
+
+      <div id="vorplatz"></div>
+      <!-- Mitten im sichtbaren Bereich, wenn die Seite 800 px gescrollt ist. -->
+      <button id="unten" type="button">Unten, frei</button>
+      <div id="platz"></div>
+    </main>
+
+    <script>
+      const einfuegen = (e) => e.clipboardData?.getData("text") ?? "";
+      document.getElementById("gesperrt").addEventListener("paste", (e) => e.preventDefault());
+      document.getElementById("selbst").addEventListener("paste", (e) => {
+        e.preventDefault();
+        e.target.value += einfuegen(e);
+      });
+      document.getElementById("dialog").addEventListener("paste", (e) => {
+        e.preventDefault();
+        window.alert("Einfügen ist nicht erlaubt");
+        window.confirm("Wirklich?");
+        window.prompt("Warum?");
+      });
+    </script>
+    <script type="module">
+      import { enable } from "../../../dist/inspector.js";
+
+      enable();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Streng: weder <style> noch style-Attribute, nur Dateien. Die Messung des
+         Textabstands darf daran nicht scheitern. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Textabstand unter strenger CSP</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="probes.css" />
+  </head>
+  <body>
+    <main id="inhalt">
+      <h1>Textabstand</h1>
+      <div id="eng">Dieser Satz passt knapp in eine Zeile.</div>
+    </main>
+    <script type="module" src="csp-strikt.js"></script>
+  </body>
+</html>
