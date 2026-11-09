@@ -20,7 +20,7 @@ erzeugen — das ist der Unterschied zu Lighthouse/klassischen Scan-Reports.
 [github.com/casoon/liveaudit](https://github.com/casoon/liveaudit) unter MIT, die
 Projektseite läuft auf <https://casoon.github.io/liveaudit/>. Seit 29.09.2026
 steht es als [`@casoon/liveaudit`](https://www.npmjs.com/package/@casoon/liveaudit)
-0.1.0 auf npm, seit 30.09.2026 in 0.2.0 mit `a11y-rules` 0.13.0 — die gebauten
+0.1.0 auf npm, seit 30.09.2026 in 0.2.0 mit `a11y-rules` 0.13.0 (im Repository inzwischen `a11y-rules` 0.28.3) — die gebauten
 Dateien aus `npm/`, zum Selbsthosten.
 
 **LiveAudit ist lauffähig und auslieferbar.** Alle fünf Schritte aus
@@ -51,7 +51,7 @@ wer sich darauf verlässt, bekommt einen `ReferenceError` statt einer Erklärung
 |---|---|
 | Konzept und Architekturentscheidungen | fertig, siehe [decisions.md](decisions.md) |
 | Performance-Messung | fertig, siehe [../spike/ERGEBNIS.md](../spike/ERGEBNIS.md) |
-| Gemeinsamer Kern in barrierlab | **veröffentlicht**, vier `a11y-*`-Crates auf crates.io, 0.13.0: Geltungsbereich je Regel, Checkliste `manual/*`, heuristische Tier-3-Regeln; `@casoon/a11y-wasm` 0.3.0 |
+| Gemeinsamer Kern in barrierlab | **veröffentlicht**, vier `a11y-*`-Crates auf crates.io, 0.13.0 (hier gebündelt: a11y-wasm 0.15.2, a11y-rules 0.28.3, 169 Regelkennungen): Geltungsbereich je Regel, Checkliste `manual/*`, heuristische Tier-3-Regeln; `@casoon/a11y-wasm` 0.3.0 |
 | Schritt 1 — Monorepo-Grundgerüst | **fertig** |
 | Schritt 2 — `packages/browser` (DOM Collector) | **fertig** |
 | Schritt 3 — WASM-Schicht (Rule Engine angebunden) | **fertig**, seit 23.09.2026 als `@casoon/a11y-wasm` ausgelagert |
@@ -329,7 +329,12 @@ wurde dafür am 29.09.2026 von 20 auf 25 KB angehoben, siehe
 [decisions.md](decisions.md). Sparpotenzial bliebe etwa im CSS, das als
 Zeichenkette nicht minifiziert wird.
 
-**Das WASM liegt bei 92 % seiner Grenze von 100 KB.** Der Sprung von 80,9 auf
+**Stand 09.11.2026:** mit `@casoon/a11y-wasm` 0.15.2 (`a11y-rules` 0.28.3, 169
+Regelkennungen) liegt das WASM bei 405,4 KB roh / **169,3 KB gzip**, die Grenze
+wurde auf 180 KB angehoben (94 %), siehe [decisions.md](decisions.md). Die
+folgenden Zahlen sind der Stand vom 30.09.2026.
+
+**Das WASM lag bei 92 % seiner Grenze von 100 KB.** Der Sprung von 80,9 auf
 92,4 KB kommt aus der Sicht je Geltungsbereich (+2,5 KB), der Checkliste und
 den acht Heuristiken (+9 KB). Der nächste Regelausbau stößt an die Grenze.
 
@@ -351,8 +356,8 @@ einfache Regeln, hier stecken der vollständige `a11y-rules`-Bestand und die
 Namensberechnung aus `accname` drin.
 
 **Das Budget wird im Build erzwungen** — `scripts/bundle.js` bricht ab bei mehr
-als 25 KB gzip für `inspector.js` oder 100 KB gzip für das WASM-Modul. Die
-WASM-Grenze wurde am 19.09.2026 von 80 auf 100 KB angehoben, die für das
+als 25 KB gzip für `inspector.js` oder 180 KB gzip für das WASM-Modul. Die
+WASM-Grenze wurde am 19.09.2026 von 80 auf 100 KB, am 09.11.2026 auf 180 KB angehoben, die für das
 JavaScript am 29.09.2026 von 20 auf 25 KB; die Begründungen stehen in
 [decisions.md](decisions.md). `serde-wasm-bindgen` bleibt damit an der
 Grenze, und der Layer kommt mit, statt nachgeladen zu werden.

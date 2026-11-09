@@ -80,9 +80,10 @@ describe("mergeSubtrees", () => {
     const bereich = doc.getElementById("bereich") as Element;
 
     // Für sich allein gescannt hält der Bereich sich für ein Dokument ohne
-    // Titel, ohne h1 und ohne main-Landmark.
+    // Überschrift (seit a11y-rules 0.28 meldet ein Fragment ohne main-Landmark
+    // keine landmarks/*-missing mehr, headings/none aber weiterhin).
     const allein = kennungen(scan(bereich));
-    assert.ok(allein.some((id) => id.startsWith("landmarks/")));
+    assert.ok(allein.includes("headings/none"));
 
     const nachher = mergeSubtrees(vorher, [{ wurzel: bereich, ergebnis: scan(bereich) }]);
     const ausDemTeilbaum = nachher.documents[1]?.report.findings ?? [];
@@ -115,15 +116,15 @@ describe("mergeSubtrees", () => {
     const ohneMain = parse(`<!doctype html><html lang="de"><head><title>T</title></head>
       <body><h1>T</h1><div id="bereich"><p>Text</p></div></body></html>`);
     const vorher = scan(ohneMain.documentElement);
-    const dokumentweit = kennungen(vorher).filter((id) => id.startsWith("landmarks/"));
+    // landmarks/content-outside hängt an einem Element und wird mit dem
+    // Teilbaum ausgetauscht; nur die fehlenden Landmarks gelten dem Dokument.
+    const istDokumentweit = (id: string) => /^landmarks\/.+-missing$/.test(id);
+    const dokumentweit = kennungen(vorher).filter(istDokumentweit);
     assert.ok(dokumentweit.length > 0);
 
     const bereich = ohneMain.getElementById("bereich") as Element;
     const nachher = mergeSubtrees(vorher, [{ wurzel: bereich, ergebnis: scan(bereich) }]);
 
-    assert.deepEqual(
-      kennungen(nachher).filter((id) => id.startsWith("landmarks/")),
-      dokumentweit,
-    );
+    assert.deepEqual(kennungen(nachher).filter(istDokumentweit), dokumentweit);
   });
 });

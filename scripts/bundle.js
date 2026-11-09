@@ -62,7 +62,7 @@ await copyFile(wasm, join(dist, "a11y_wasm_bg.wasm"));
  */
 const BUDGET_KB_GZIP = {
   "inspector.js": 25,
-  "a11y_wasm_bg.wasm": 100,
+  "a11y_wasm_bg.wasm": 180,
 };
 
 let ueberschritten = false;

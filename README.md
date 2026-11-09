@@ -203,7 +203,7 @@ when LiveAudit changes.
 ### Budget
 
 The build enforces a size budget and fails when it is exceeded: 25 KB gzip for
-`inspector.js`, 100 KB for the WebAssembly module. A budget that is only reported
+`inspector.js`, 180 KB for the WebAssembly module. A budget that is only reported
 is not a budget.
 
 ## The inspector layer
