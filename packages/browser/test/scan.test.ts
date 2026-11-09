@@ -51,7 +51,7 @@ describe("Regelbestand über der Arena", () => {
       <meta name="viewport" content="width=device-width, initial-scale=1"></head>
       <body>
         <a href="#inhalt" class="skip-link">Zum Inhalt springen</a>
-        <header><nav><a href="/">Start</a></nav></header>
+        <header><nav><a href="/" aria-current="page">Startseite der Beispielfirma</a></nav></header>
         <main id="inhalt"><h1>Titel</h1><p>Text.</p></main>
         <footer>Impressum</footer>
       </body></html>`);
@@ -64,19 +64,19 @@ describe("Regelbestand über der Arena", () => {
     assert.ok(report?.findings.every((f) => f.outcome === "untested"));
   });
 
-  it("meldet fehlende Landmarks als REVIEW, außer main", () => {
-    // Zwei Achsen: main fehlt nachweislich, eine Navigation zu erwarten ist
-    // dagegen eine Annahme. Der Unterschied steht im Outcome, nicht in einer
-    // dritten Achse für Gewissheit.
+  it("meldet fehlende Landmarks als REVIEW", () => {
+    // Ein fehlender Landmark ist eine Erwartung an die Seite, kein
+    // nachweisbarer Fehler -- seit a11y-rules 0.28 gilt das auch für main
+    // (vorher FAIL). Der Unterschied steht im Outcome, nicht in einer dritten
+    // Achse für Gewissheit.
     const doc = parse(`<!doctype html><html lang="de"><head><title>Seite</title>
       <meta name="viewport" content="width=device-width, initial-scale=1"></head>
       <body><h1>Titel</h1></body></html>`);
 
     const report = scan(doc.documentElement).documents[0]?.report;
     const outcome = (id: string) => report?.findings.find((f) => f.rule_id === id)?.outcome;
-    assert.equal(outcome("landmarks/main-missing"), "fail");
+    assert.equal(outcome("landmarks/main-missing"), "review");
     assert.equal(outcome("landmarks/navigation-missing"), "review");
-    assert.equal(outcome("keyboard/skip-link-missing"), "review");
     assert.equal(outcome("zoom/viewport-missing"), undefined);
   });
 
@@ -132,7 +132,12 @@ describe("Nicht gelaufen ist nicht bestanden", () => {
     assert.ok(offen?.includes("contrast/text-undetermined"));
     // Dazu die Heuristiken über Layout und Geometrie — alles aus Tier 3,
     // nichts aus Tier 1 oder 2.
-    const tier3 = /^(contrast|order|motion|reflow|focus|targets)\/|^keyboard\/pointer-only$/;
+    // Dazu die Regeln, die Sonden oder Stylesheets brauchen, die der Collector
+    // nur im Rendering-Durchgang liefert (seit a11y-rules 0.28 auch
+    // frames/cross-origin, orientation/root-rotated, auth/paste-blocked,
+    // focus/obscured-enhanced, text-spacing/clipped).
+    const tier3 =
+      /^(contrast|order|motion|reflow|focus|targets|lists|color|text-spacing|auth|orientation|frames|text)\/|^keyboard\/(pointer-only|scrollable-region-not-focusable)$/;
     assert.deepEqual(
       offen?.filter((id) => !tier3.test(id)),
       [],

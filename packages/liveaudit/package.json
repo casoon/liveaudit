@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@casoon/a11y-wasm": "^0.3.0",
+    "@casoon/a11y-wasm": "^0.15.2",
     "@liveaudit/browser": "workspace:*",
     "@liveaudit/ui": "workspace:*"
   },

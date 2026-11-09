@@ -94,7 +94,11 @@ Entschieden: **Zustand + Severity**, `certainty` entfällt als eigenes Feld.
     (Text auf einem Verlauf, `contrast/text-undetermined`);
   - ein **Vermerk „nicht gelaufen"** am Regellauf (`rule_runs`, `not_run` mit
     Grund, etwa `capability_missing`) — die Regel lief gar nicht, weil der Host
-    ihr Tier nicht bedient; in der Seitenleiste „Rules that did not run";
+    ihr Tier oder ihre Sonde nicht bedient; in der Seitenleiste „Rules that did
+    not run". Neue Regelkennungen aus `a11y-rules` landen hier, solange der
+    Collector ihre Sonde nicht liefert (Stand `a11y-rules` 0.28.3: `frames/cross-origin`,
+    `orientation/root-rotated`, `auth/paste-blocked`, `focus/obscured-enhanced`,
+    `text-spacing/clipped`, dazu die Stylesheet-Regeln) — nie als bestanden;
   - ein **nicht erreichbarer Bereich** (`untested` im Scan-Ergebnis) — ein Teil
     der Seite, etwa ein Cross-Origin-Frame, wurde nicht gescannt; in der
     Seitenleiste „Unreachable scopes".
@@ -193,7 +197,7 @@ unter `style-src 'self'` fest, gegengeprüft mit dem alten `<style>`.
 ## Bundle-Budget wird im Build erzwungen
 
 Entschieden: Der Build bricht ab, wenn `dist/` die festgelegten Grenzen
-überschreitet — 25 KB gzip für `inspector.js`, 100 KB gzip für das WASM-Modul.
+überschreitet — 25 KB gzip für `inspector.js`, 180 KB gzip für das WASM-Modul.
 
 *Grund:* Ein Budget, das nur berichtet wird, ist keins. Die Größe wächst
 schleichend mit jeder Regel und jedem UI-Detail; ohne Abbruch merkt es niemand,
@@ -216,6 +220,14 @@ alten Grenze. Die Grenze soll Wachstum sichtbar machen, nicht Funktionen
 verhindern: Ob 20 oder 25 KB, ist für den Einsatz nicht entscheidend — wichtig
 ist, dass jede Anhebung bewusst geschieht. Optimieren oder Weglassen bleibt die
 andere Möglichkeit, wenn eine Erweiterung sie nahelegt.
+
+*Angehoben am 09.11.2026:* Das WASM-Budget von 100 auf 180 KB. Mit
+`@casoon/a11y-wasm` 0.15.2 (`a11y-rules` 0.28.3, 169 Regelkennungen statt der
+39 aus 0.13) wiegt das Modul 169,3 KB gzip; die alte Grenze war nicht mehr zu
+halten, ohne den Regelbestand zu beschneiden — und der gehört nach barrierlab,
+nicht hierher. 180 KB lassen rund 6 % Luft: die Grenze bleibt in Reichweite und
+macht den nächsten Zuwachs sichtbar. Ob der Zuwachs von 92 auf 169 KB in
+barrierlab zu drücken ist (Größenbudget dort), ist eine eigene Frage.
 
 ## „Inspector-Layer", nicht „Overlay"
 
@@ -339,7 +351,12 @@ Shadow DOM gibt es keine Verschränkung wie das Slotting.
 - `UNTESTED` steht hier bewusst **nicht** als `Finding` im Bericht. Ein Finding
   braucht eine Rule-ID, und eine hier zu erfinden bräche die Zusicherung
   identischer Kennungen über alle drei Oberflächen. Soll daraus eine Regel
-  werden (etwa `frames/cross-origin`), gehört sie nach `a11y-rules`.
+  werden, gehört sie nach `a11y-rules`.
+- *Stand 09.11.2026:* `a11y-rules` 0.28 führt `frames/cross-origin` als Regel
+  ein. Sie braucht eine Sonde des Hosts (Frame-Zugriff); `@casoon/a11y-wasm`
+  0.15.2 bietet dafür noch keine Schnittstelle, die Regel steht deshalb als
+  „nicht gelaufen" in der Seitenleiste. Der `UNTESTED`-Geltungsbereich bleibt
+  daneben bestehen, bis die Sonde angebunden ist.
 
 ## Sichtbare Texte sind englisch, der Code bleibt deutsch
 

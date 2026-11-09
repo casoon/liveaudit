@@ -26,6 +26,9 @@ async function kontrastBefunde(page: Page): Promise<Record<string, string>> {
     for (const dokument of ergebnis.documents) {
       for (const befund of dokument.report.findings) {
         if (!befund.rule_id.startsWith("contrast/")) continue;
+        // AAA (7:1, seit a11y-rules 0.28): #767676 besteht AA knapp und fällt
+        // hier durch -- die Fälle unten fragen nach AA.
+        if (befund.rule_id === "contrast/text-enhanced") continue;
         const element = dokument.idToElement.get(Number(befund.location?.node));
         const klasse = typeof element?.className === "string" ? element.className : "";
         const schluessel = element?.id !== undefined && element.id !== "" ? element.id : klasse;
