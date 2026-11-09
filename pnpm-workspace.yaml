@@ -8,3 +8,8 @@ packages:
 # esbuild lädt seine plattformabhängige Binärdatei in einem Postinstall-Script.
 onlyBuiltDependencies:
   - esbuild
+
+# source-map-js < 1.2.2 (Event-Loop-DoS, GHSA) hängt transitiv an Astro
+# (magicast). Entfällt, sobald Astro selbst >= 1.2.2 zieht.
+overrides:
+  source-map-js: ">=1.2.2"
