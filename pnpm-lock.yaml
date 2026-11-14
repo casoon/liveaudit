@@ -57,8 +57,8 @@ importers:
   site:
     dependencies:
       '@casoon/pages-theme':
-        specifier: ^0.12.12
-        version: 0.12.12(@astrojs/markdown-satteri@0.4.7)(@types/node@24.13.6)(astro@7.4.7(@types/node@24.13.6)(esbuild@0.28.2)(yaml@2.9.1))
+        specifier: ^0.12.14
+        version: 0.12.14(@astrojs/markdown-satteri@0.4.7)(@types/node@24.13.6)(astro@7.4.7(@types/node@24.13.6)(esbuild@0.28.2)(yaml@2.9.1))
       astro:
         specifier: ^7.4.7
         version: 7.4.7(@types/node@24.13.6)(esbuild@0.28.2)(yaml@2.9.1)
@@ -345,8 +345,8 @@ packages:
     resolution: {integrity: sha512-VUlh1vppOs5VXDpqHNH3ye9ZVE0peO0TfWLRIECmYO15cxToHBkBYlwTFLhFPEdt70SFIS00iGW2SZygMR+hCw==}
     engines: {node: '>=22.12.0'}
 
-  '@casoon/pages-theme@0.12.12':
-    resolution: {integrity: sha512-O5QQ+6ZneTNtIE2pLOgJvFchRYOSFPmpZUSJ9sbXQkbF+24oakFto0Gc/edACoec0VhjQZ395DdmYCh9b23N2g==}
+  '@casoon/pages-theme@0.12.14':
+    resolution: {integrity: sha512-L9/oWzsLvoqZQMrX4mj0mo1XUS1omAZ9gK0N5XSbf15UkN1HJlIOoeyE+tFaaZBMIo8OBQMULtCYXUYruHSjUw==}
     peerDependencies:
       astro: ^7.3.2
 
@@ -2380,7 +2380,7 @@ snapshots:
 
   '@casoon/a11y-wasm@0.16.0': {}
 
-  '@casoon/pages-theme@0.12.12(@astrojs/markdown-satteri@0.4.7)(@types/node@24.13.6)(astro@7.4.7(@types/node@24.13.6)(esbuild@0.28.2)(yaml@2.9.1))':
+  '@casoon/pages-theme@0.12.14(@astrojs/markdown-satteri@0.4.7)(@types/node@24.13.6)(astro@7.4.7(@types/node@24.13.6)(esbuild@0.28.2)(yaml@2.9.1))':
     dependencies:
       '@astrojs/mdx': 8.1.2(@astrojs/markdown-satteri@0.4.7)(astro@7.4.7(@types/node@24.13.6)(esbuild@0.28.2)(yaml@2.9.1))
       astro: 7.4.7(@types/node@24.13.6)(esbuild@0.28.2)(yaml@2.9.1)
