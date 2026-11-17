@@ -234,6 +234,9 @@ barrierlab zu drücken ist (Größenbudget dort), ist eine eigene Frage.
 barrierlab selbst führt seit dem 14.11.2026 ein Budget von 195 KB (ACT-Korrekturen,
 Messspalten). Der Zuwachs kommt aus dem Regelbestand, nicht aus diesem Repository.
 
+*Stand 17.11.2026, `@casoon/a11y-wasm` 0.17.0:* 198,2 KB gzip (99 %) mit der Messspalte `withMedia`;
+barrierlab führt dort 200 KB. Die Grenze bleibt, der nächste Regelzuwachs braucht eine Entscheidung.
+
 ## „Inspector-Layer", nicht „Overlay"
 
 Entschieden: Der visuelle Teil des Tools heißt **Inspector-Layer**. Das Wort

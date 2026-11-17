@@ -8,6 +8,9 @@ package keeps its own release history in [npm/CHANGELOG.md](npm/CHANGELOG.md).
 
 ### Added
 
+- **Collector:** playback measurement of autoplay media (`probes: ["media"]`, `media/audio-autoplay-measured`,
+  WCAG 1.4.2) via `Scan.withMedia`: paused, muted, duration and audible sound. It changes nothing on the page;
+  media that is not ready stays unmeasured, never "paused". Opt-in, see [docs/constraints.md](docs/constraints.md).
 - **Collector:** the page-dependent probes of `a11y-rules` 0.28.3 (liveaudit#16). With `rendering: true`
   the collector reports frame reachability (`frames/cross-origin`) and the transform of `html`/`body`
   (`orientation/root-rotated`). `probes: ["paste", "focus", "spacing"]` opts in to the probes that touch
@@ -19,6 +22,8 @@ package keeps its own release history in [npm/CHANGELOG.md](npm/CHANGELOG.md).
 
 ### Changed
 
+- **Rules:** `@casoon/a11y-wasm` 0.17.0 replaces 0.16.1 and adds the `withMedia` column. The WebAssembly
+  module is 198.2 KB gzip, inside the 200 KB budget.
 - **Rules:** `@casoon/a11y-wasm` 0.16.1 (`a11y-rules` 0.30.11) replaces 0.16.0: the ACT corrections and
   `orientation/locked`, `timing/meta-refresh-enhanced`, `media/audio-autoplay-measured`. The last one stays
   under "Rules that did not run" until the collector measures media playback.

@@ -329,6 +329,9 @@ wurde dafür am 29.09.2026 von 20 auf 25 KB angehoben, siehe
 [decisions.md](decisions.md). Sparpotenzial bliebe etwa im CSS, das als
 Zeichenkette nicht minifiziert wird.
 
+**Stand 17.11.2026 (später):** mit `@casoon/a11y-wasm` 0.17.0 und der Wiedergabe-Messung liegt das
+WASM bei 474,0 KB roh / **198,2 KB gzip** (99 % von 200 KB), `inspector.js` bei **24,7 KB gzip** (99 % von 25 KB).
+
 **Stand 17.11.2026:** mit `@casoon/a11y-wasm` 0.16.1 (`a11y-rules` 0.30.11) liegt das
 WASM bei 467,4 KB roh / **195,0 KB gzip**, `inspector.js` bei 21,6 KB gzip; die Grenze für das WASM steht
 bei 200 KB (97,5 %), siehe [decisions.md](decisions.md).

@@ -11,6 +11,7 @@
 import { Scan } from "@casoon/a11y-wasm";
 
 import { collect, type FrameRef } from "./collect.ts";
+import type { MediaSample } from "./media.ts";
 import { applyProbes, collectProbes, type ProbeName, type ProbeReport } from "./probes.ts";
 import { collectRendering, measureFocus } from "./rendering.ts";
 import type { Report } from "./report.ts";
@@ -88,11 +89,22 @@ export interface ScanOptions {
    * - `"spacing"`: überschreibt den Textabstand nach WCAG 1.4.12 über ein
    *   adoptiertes Stylesheet (`text-spacing/clipped`). Kein Knoten und kein
    *   Attribut ändert sich.
+   * - `"media"`: misst die Wiedergabe selbststartender `<audio>`/`<video>`
+   *   (`media/audio-autoplay-measured`, WCAG 1.4.2): läuft es, ist es stumm, wie
+   *   lang ist es, hat es hörbaren Ton. Wartet bis zu rund 4,5 s, deshalb nur
+   *   über `scanDocument`/`show`/`watch`. Ändert nichts an der Seite; der Ton wird
+   *   über `captureStream` und einen nicht verbundenen Analyser abgehört.
    *
    * Ohne Eintrag steht die zugehörige Regel als nicht gelaufen im Bericht. Die
    * lesenden Messungen (Rahmen, Drehung der Wurzel) laufen mit `rendering` immer.
    */
   probes?: readonly ProbeName[];
+  /**
+   * Die Messwerte der Wiedergabe-Messung (`measureMedia`), wenn `"media"` in
+   * `probes` steht. Sie sind asynchron und kommen deshalb vorab; `scanDocument`
+   * erhebt sie selbst. Ohne sie bleibt `media/audio-autoplay-measured` nicht gelaufen.
+   */
+  media?: ReadonlyMap<Element, MediaSample>;
 }
 
 export type { ProbeName, ProbeReport };
@@ -152,7 +164,7 @@ export function scan(
           const renderingStarted = performance.now();
           const r = collectRendering(collected.idToElement, c.nodes, view);
           if (options.focus === true) measureFocus(collected.idToElement, r, view);
-          const gemessen = collectProbes(collected, r, view, options.probes ?? []);
+          const gemessen = collectProbes(collected, r, view, options.probes ?? [], options.media);
           probes = gemessen.report;
           renderingMs += performance.now() - renderingStarted;
           arena.withRendering(r.color, r.background, r.fontSizePx, r.fontWeight, r.flags);
