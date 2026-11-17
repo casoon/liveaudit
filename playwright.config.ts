@@ -28,7 +28,14 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    {
+      name: "chromium",
+      // Die Medien-Tests brauchen selbststartenden Ton ohne Nutzergeste.
+      use: {
+        ...devices["Desktop Chrome"],
+        launchOptions: { args: ["--autoplay-policy=no-user-gesture-required"] },
+      },
+    },
     { name: "firefox", use: { ...devices["Desktop Firefox"] } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
   ],

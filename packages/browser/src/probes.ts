@@ -19,6 +19,7 @@
  */
 
 import { type FrameRef, flatParent } from "./collect.ts";
+import { type MediaColumn, type MediaSample, mediaColumn } from "./media.ts";
 import {
   FLAG_DISPLAY_NONE,
   FLAG_VISIBILITY_HIDDEN,
@@ -27,7 +28,7 @@ import {
 } from "./rendering.ts";
 
 /** Die Messungen, die die Seite berühren und deshalb einzeln anzufordern sind. */
-export type ProbeName = "paste" | "focus" | "spacing";
+export type ProbeName = "paste" | "focus" | "spacing" | "media";
 
 /** Bits der Einfüge-Spalte, passend zu `PASTE_*` in `a11y-wasm`. */
 const PASTE_CANCELLED = 1;
@@ -81,13 +82,14 @@ export interface ProbeColumns {
   paste: PasteColumn | null;
   focus: FocusColumn | null;
   spacing: SpacingColumn | null;
+  media: MediaColumn | null;
 }
 
 /** Was ein Durchgang nicht gemessen hat, obwohl er angefordert war. */
 export interface ProbeSkip {
   probe: ProbeName;
-  reason: "cap" | "override-failed";
-  /** Bei `cap`: wie viele Elemente über dem Deckel lagen. */
+  reason: "cap" | "override-failed" | "unmeasured";
+  /** Bei `cap`: wie viele Elemente über dem Deckel lagen; bei `unmeasured`: wie viele ohne Messwert. */
   count?: number;
 }
 
@@ -633,6 +635,20 @@ function messeNachher(zuMessen: Kandidat[], win: Window, nachher: Map<number, bo
 
 // --- Zusammenstellung -----------------------------------------------------------
 
+/** Wie viele selbststartende Medien dieses Dokuments keinen Messwert haben (zu langsam geladen). */
+function autoplayOhneMesswert(
+  idToElement: Map<number, Element>,
+  media: ReadonlyMap<Element, MediaSample>,
+): number {
+  let n = 0;
+  for (const el of idToElement.values()) {
+    if ((el.localName === "audio" || el.localName === "video") && el.hasAttribute("autoplay")) {
+      if (!media.has(el)) n++;
+    }
+  }
+  return n;
+}
+
 /**
  * Alle Messungen eines Dokuments. Die lesenden laufen immer, die berührenden nur,
  * wenn sie in `probes` stehen.
@@ -646,6 +662,7 @@ export function collectProbes(
   columns: RenderingColumns,
   win: Window,
   probes: readonly ProbeName[],
+  media?: ReadonlyMap<Element, MediaSample>,
 ): { columns: ProbeColumns; report: ProbeReport } {
   const spalten: ProbeColumns = {
     frames: probeFrames(collected.frames),
@@ -653,6 +670,7 @@ export function collectProbes(
     paste: null,
     focus: null,
     spacing: null,
+    media: null,
   };
   const skipped: ProbeSkip[] = [];
   const report: ProbeReport = { columns: {}, skipped };
@@ -671,6 +689,15 @@ export function collectProbes(
     spalten.spacing = r.column;
     if (r.overCap > 0) skipped.push({ probe: "spacing", reason: "cap", count: r.overCap });
     if (r.failed) skipped.push({ probe: "spacing", reason: "override-failed" });
+  }
+
+  // Die Messwerte kommen asynchron vorab (`measureMedia`). Auch eine leere Spalte
+  // ist eine Aussage: Die Messung lief, und dieses Dokument hat kein
+  // selbststartendes Medium. Ohne Messwerte bleibt die Spalte aus.
+  if (probes.includes("media") && media !== undefined) {
+    spalten.media = mediaColumn(media, collected.elementToId);
+    const ungemessen = autoplayOhneMesswert(collected.idToElement, media);
+    if (ungemessen > 0) skipped.push({ probe: "media", reason: "unmeasured", count: ungemessen });
   }
 
   for (const [name, spalte] of Object.entries(spalten) as [
@@ -695,6 +722,13 @@ export function applyProbes(
       blocker: Int32Array,
     ): void;
     withTextSpacing(nodes: Uint32Array, flags: Uint8Array): void;
+    withMedia(
+      nodes: Uint32Array,
+      paused: Int8Array,
+      muted: Int8Array,
+      duration: Float64Array,
+      has_audio: Int8Array,
+    ): void;
   },
   c: ProbeColumns,
 ): void {
@@ -707,4 +741,13 @@ export function applyProbes(
     arena.withFocusCover(c.focus.nodes, c.focus.points, c.focus.covered, c.focus.blocker);
   }
   if (c.spacing !== null) arena.withTextSpacing(c.spacing.nodes, c.spacing.flags);
+  if (c.media !== null) {
+    arena.withMedia(
+      c.media.nodes,
+      c.media.paused,
+      c.media.muted,
+      c.media.duration,
+      c.media.hasAudio,
+    );
+  }
 }

@@ -16,6 +16,7 @@
 
 import initCore from "@casoon/a11y-wasm";
 import { type LiveHandle, type LiveOptions, watch as watchLive } from "@liveaudit/browser/live";
+import { measureMedia } from "@liveaudit/browser/media";
 import { type ScanOptions, type ScanResult, scan } from "@liveaudit/browser/scan";
 import {
   configureLive,
@@ -37,6 +38,7 @@ setOwnResources([import.meta.url, new URL("a11y_wasm_bg.wasm", import.meta.url).
 
 export type { ArenaColumns, Collected, FrameRef } from "@liveaudit/browser/collect";
 export { collect, countNodes, HOST_TAG_NAME } from "@liveaudit/browser/collect";
+export type { MediaSample } from "@liveaudit/browser/media";
 export * from "@liveaudit/browser/report";
 export type {
   DocumentScan,
@@ -113,7 +115,14 @@ export function init(): Promise<unknown> {
 /** Initialisiert das Modul, falls nötig, und scannt das Dokument. */
 export async function scanDocument(root?: Element, options?: ScanOptions): Promise<ScanResult> {
   await init();
-  return scan(root ?? document.documentElement, options ?? {});
+  const wurzel = root ?? document.documentElement;
+  let optionen = options ?? {};
+  // Die Wiedergabe-Messung wartet auf Metadaten und Anlaufen, der Scan ist
+  // synchron: Sie läuft vorab und reicht ihre Messwerte durch.
+  if (optionen.rendering === true && optionen.probes?.includes("media") && !optionen.media) {
+    optionen = { ...optionen, media: await measureMedia(wurzel) };
+  }
+  return scan(wurzel, optionen);
 }
 
 /**

@@ -53,13 +53,21 @@ Technisch prüfbar, inhaltlich nicht zuverlässig automatisch beurteilbar:
   nicht und stehen mit `capability_missing` als nicht gelaufen im Bericht — nicht
   als bestanden. Ein `UNTESTED`-Befund entsteht erst, wenn der Durchgang lief und
   eine Farbe trotzdem nicht bestimmbar war (`contrast/text-undetermined`).
-- **Sonden, die die Seite berühren, sind Opt-in** (`probes: ["paste", "focus", "spacing"]`, nur mit
+- **Sonden, die die Seite berühren, sind Opt-in** (`probes: ["paste", "focus", "spacing", "media"]`, nur mit
   `rendering`). Sie stellen Fokus, Scrollposition, Feldwerte und Stile in einem `finally` wieder her;
   der Textabstand läuft über ein adoptiertes Stylesheet, ohne Knoten oder Attribut zu ändern. Nicht
   zurücknehmen lässt sich, was Handler der Seite dabei tun (`focus`, `blur`, `paste`, `scroll`). Die
   Fokus-Messung ist auf 300 Bedienelemente begrenzt, die Textabstand-Messung auf 5000 Elemente; der
   Deckel steht in `DocumentScan.probes.skipped`. Das Ereignis der Einfüge-Probe ist synthetisch
   (`isTrusted` falsch).
+- **Die Wiedergabe-Messung (`probes: ["media"]`) ist asynchron und deshalb Sache von
+  `scanDocument`/`show`/`watch`.** `scan()` bleibt synchron und nimmt die Messwerte als
+  `options.media` entgegen. Die Messung wartet insgesamt höchstens rund 3 s auf Metadaten, 0,5 s aufs
+  Anlaufen und 1 s aufs Abhören. Ein Medium ohne Metadaten oder ohne genug Daten zum Starten bleibt
+  ungemessen (`probes.skipped`, Grund `unmeasured`), nie „pausiert". Der Ton kommt über `captureStream()`
+  und einen Analyser, der nicht mit dem Ausgang verbunden ist (nicht `createMediaElementSource`, das den
+  Ton umleitet); fremde Herkunft oder fehlendes `captureStream` heißt „nicht bestimmt", eine stumme
+  Tonspur gilt nicht als belegt. Der Live-Modus misst nicht neu: Rescans laufen ohne diese Spalte.
 - **`getBoundingClientRect()` je Knoten wird nicht erhoben**, nur an
   Bedienelementen für Zielgröße und Verdeckung. Geometrie je Knoten kostete
   noch einmal so viel wie der ganze Collector.

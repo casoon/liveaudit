@@ -36,7 +36,7 @@ export interface ScanErgebnis {
 export interface ScanOptionen {
   rendering?: boolean;
   focus?: boolean;
-  probes?: ("paste" | "focus" | "spacing")[];
+  probes?: ("paste" | "focus" | "spacing" | "media")[];
 }
 
 /** Nur das, was die Tests von der öffentlichen Schnittstelle brauchen. */

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Selbststartende Medien</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <main>
+      <h1>Selbststartende Medien</h1>
+      <!-- Die Elemente entstehen in media.js: Die Testtöne sind WAV-Blobs. -->
+      <div id="medien"></div>
+    </main>
+    <script src="media.js"></script>
+    <script type="module">
+      import { enable } from "../../../dist/inspector.js";
+
+      enable();
+    </script>
+  </body>
+</html>

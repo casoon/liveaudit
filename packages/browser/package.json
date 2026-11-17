@@ -7,6 +7,7 @@
   "exports": {
     "./collect": "./src/collect.ts",
     "./live": "./src/live.ts",
+    "./media": "./src/media.ts",
     "./report": "./src/report.ts",
     "./scan": "./src/scan.ts",
     "./weight": "./src/weight.ts"
@@ -15,6 +16,6 @@
     "test": "node --test --experimental-strip-types test/*.test.ts"
   },
   "dependencies": {
-    "@casoon/a11y-wasm": "^0.16.1"
+    "@casoon/a11y-wasm": "^0.17.0"
   }
 }

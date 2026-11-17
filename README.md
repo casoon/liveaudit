@@ -34,6 +34,9 @@ Focus visibility needs a pass that moves focus, so it is its own opt-in:
 Four further rules need a measurement that touches the page for a moment — pasting into
 password fields, focus under fixed bars, text spacing — and are opt-in too:
 `{ rendering: true, probes: ["paste", "focus", "spacing"] }`. Each restores what it touched.
+Autoplay media (WCAG 1.4.2) is measured the same way with `probes: ["media"]`: it waits up to a few
+seconds for the media to start, changes nothing on the page and listens for sound without playing it
+anywhere else.
 
 **What no machine can decide becomes a checklist**, not silence: captions,
 alt text quality, error messages, time limits and the like appear once per
