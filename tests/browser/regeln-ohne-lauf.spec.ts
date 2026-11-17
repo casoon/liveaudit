@@ -23,8 +23,9 @@ test("ohne Darstellungsdurchgang nennt die Seitenleiste die Tier-3-Regeln", asyn
     await window.LiveAudit.show();
   });
 
-  // Kontrast und die Heuristiken über Layout und Geometrie (liveaudit#6).
-  await expect(page.locator(`${GRUPPE} h3`)).toHaveText("Rules that did not run (10)");
+  // Kontrast, die Heuristiken über Layout und Geometrie (liveaudit#6), die
+  // Messspalten und die Regeln über Stylesheets.
+  await expect(page.locator(`${GRUPPE} h3`)).toHaveText(/^Rules that did not run \(\d+\)$/);
   const eintraege = await page.locator(`${GRUPPE} li`).allInnerTexts();
   expect(eintraege.join(" ")).toContain("contrast/text-insufficient");
   expect(eintraege.join(" ")).toContain("contrast/text-undetermined");
@@ -33,10 +34,20 @@ test("ohne Darstellungsdurchgang nennt die Seitenleiste die Tier-3-Regeln", asyn
   expect(eintraege.join(" ")).toContain("capability missing");
 });
 
-test("mit Kontrastdurchgang verschwindet die Gruppe", async ({ page }) => {
+test("mit Kontrastdurchgang bleibt die Gruppe für das, was der Host nicht misst", async ({
+  page,
+}) => {
   await page.evaluate(async () => {
     await window.LiveAudit.show(undefined, { rendering: true });
   });
 
-  await expect(page.locator(GRUPPE)).toHaveCount(0);
+  // Die Gruppe verschwindet nicht: Fokus-Sichtbarkeit (ohne Fokusdurchgang),
+  // Textabstand und die Regeln über Stylesheets liefert der Host nicht. Was
+  // er misst, steht nicht mehr darin.
+  const eintraege = (await page.locator(`${GRUPPE} li`).allInnerTexts()).join(" ");
+  expect(eintraege).toContain("focus/indicator-missing");
+  expect(eintraege).toContain("text-spacing/clipped");
+  expect(eintraege).not.toContain("contrast/text-insufficient");
+  expect(eintraege).not.toContain("targets/size");
+  expect(eintraege).not.toContain("frames/cross-origin");
 });

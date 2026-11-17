@@ -51,7 +51,7 @@ wer sich darauf verlässt, bekommt einen `ReferenceError` statt einer Erklärung
 |---|---|
 | Konzept und Architekturentscheidungen | fertig, siehe [decisions.md](decisions.md) |
 | Performance-Messung | fertig, siehe [../spike/ERGEBNIS.md](../spike/ERGEBNIS.md) |
-| Gemeinsamer Kern in barrierlab | **veröffentlicht**, vier `a11y-*`-Crates auf crates.io, 0.13.0: Geltungsbereich je Regel, Checkliste `manual/*`, heuristische Tier-3-Regeln; `@casoon/a11y-wasm` 0.3.0 |
+| Gemeinsamer Kern in barrierlab | **veröffentlicht**, vier `a11y-*`-Crates auf crates.io, 0.13.0: Geltungsbereich je Regel, Checkliste `manual/*`, heuristische Tier-3-Regeln; `@casoon/a11y-wasm` 0.16.1 (a11y-rules 0.30.11) |
 | Schritt 1 — Monorepo-Grundgerüst | **fertig** |
 | Schritt 2 — `packages/browser` (DOM Collector) | **fertig** |
 | Schritt 3 — WASM-Schicht (Rule Engine angebunden) | **fertig**, seit 23.09.2026 als `@casoon/a11y-wasm` ausgelagert |
@@ -293,6 +293,22 @@ Fixierte und klebende Leisten werden gegen `scroll-padding-top` gehalten. Die
 Spalten gehen über `Scan.withLayout()` an `@casoon/a11y-wasm`. Alle diese
 Regeln melden `REVIEW`, nie `FAIL`.
 
+**Messspalten aus `@casoon/a11y-wasm` 0.16.** Der Collector liefert, was ein
+Browser ohne Eingriff in die Seite messen kann: `withScopes` (Baumbereich je
+Knoten, nur wenn ein offener Shadow Root vorkommt; über `<slot>` zugewiesene
+Knoten behalten den Bereich des äußeren Baums), mit dem Rendering-Durchgang
+`withFrames` (lesbar oder nicht je `<iframe>`) und `withTransforms`
+(`transform`/`rotate` von `html` und `body`), und mit dem Fokusdurchgang
+`withFocusCover` (3×3 Abtastpunkte, `scrollIntoView({block:"nearest"})`,
+Fensterposition danach wiederhergestellt; kein Deckel auf die Zahl der
+Elemente, verschachtelte Scrollbereiche werden nicht zurückgesetzt).
+**Nicht geliefert** und damit „nicht gelaufen“ (`capability_missing`):
+`withPasteProbes` (schickt Ereignisse an Seiten-Handler, schreibt `value`),
+`withTextSpacing` (überschreibt Stile am Dokument) — beides verändert die
+geprüfte Seite — sowie die Messung selbststartender Medien, die auch
+`@casoon/a11y-wasm` noch nicht kennt. `Location::end` steht nicht im
+`.d.ts` von 0.16.1 und wird nicht ausgewertet.
+
 **Fokus-Sichtbarkeit ist ein eigener Durchgang** (`scan(root, { rendering:
 true, focus: true })`). Er fokussiert jedes erreichbare Element einmal mit
 `focusVisible: true` und `preventScroll` und vergleicht Rahmen, Schatten,
@@ -320,9 +336,17 @@ Seite von innen.
 
 ## Bundle-Größe
 
-`dist/inspector.js` 57,8 KB roh / **20,4 KB gzip**, `dist/a11y_wasm_bg.wasm`
-197,6 KB roh / **92,4 KB gzip**. Gesamt 112,8 KB gzip (30.09.2026, `a11y-rules`
-0.13.0 über `@casoon/a11y-wasm` 0.3.0). Das JavaScript liegt damit bei
+Stand 17.11.2026 (`@casoon/a11y-wasm` 0.16.1, gebaut gegen `a11y-rules`
+0.30.11): `dist/inspector.js` 62,5 KB roh / **21,6 KB gzip** (87 % von 25 KB),
+`dist/a11y_wasm_bg.wasm` 467,4 KB roh / **195,0 KB gzip** (97,5 % von 200 KB).
+Das Modul wuchs gegenüber 0.3.0 (92,4 KB) mit den Regeln aus `a11y-rules`
+0.13 → 0.30 und den Messspalten (rund 9 KB). Das Budget in barrierlab liegt
+bei 195 KB; hier 200 KB, weil die Messung dort und im Build hier um
+Nachkommastellen abweichen kann.
+
+Frühere Messung (30.09.2026, `a11y-rules` 0.13.0 über `@casoon/a11y-wasm`
+0.3.0): `dist/inspector.js` 57,8 KB roh / 20,4 KB gzip, `dist/a11y_wasm_bg.wasm`
+197,6 KB roh / 92,4 KB gzip, gesamt 112,8 KB gzip. Das JavaScript liegt damit bei
 **82 % seiner Grenze von 25 KB** — das Seitengewicht hat 2,4 KB gekostet, davon
 rund 1,4 KB die Messung selbst, der Rest Tabelle, CSS und Hinweise. Die Grenze
 wurde dafür am 29.09.2026 von 20 auf 25 KB angehoben, siehe
@@ -351,8 +375,8 @@ einfache Regeln, hier stecken der vollständige `a11y-rules`-Bestand und die
 Namensberechnung aus `accname` drin.
 
 **Das Budget wird im Build erzwungen** — `scripts/bundle.js` bricht ab bei mehr
-als 25 KB gzip für `inspector.js` oder 100 KB gzip für das WASM-Modul. Die
-WASM-Grenze wurde am 19.09.2026 von 80 auf 100 KB angehoben, die für das
+als 25 KB gzip für `inspector.js` oder 200 KB gzip für das WASM-Modul. Die
+WASM-Grenze wurde am 19.09.2026 von 80 auf 100 KB, am 17.11.2026 auf 200 KB angehoben, die für das
 JavaScript am 29.09.2026 von 20 auf 25 KB; die Begründungen stehen in
 [decisions.md](decisions.md). `serde-wasm-bindgen` bleibt damit an der
 Grenze, und der Layer kommt mit, statt nachgeladen zu werden.

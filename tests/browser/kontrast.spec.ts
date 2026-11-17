@@ -104,8 +104,10 @@ test("die bekannten Fälle im Licht-DOM bleiben, wie sie waren", async ({ page }
   const befunde = await kontrastBefunde(page);
 
   expect(befunde["zu-schwach"]).toBe("contrast/text-insufficient:fail");
-  expect(befunde["knapp-genug"]).toBeUndefined();
-  expect(befunde["gross-und-grau"]).toBeUndefined();
+  // 4,5:1 genügt für AA; die AAA-Regel (1.4.6, ab a11y-rules 0.21) verlangt 7:1.
+  expect(befunde["knapp-genug"]).toBe("contrast/text-enhanced:fail");
+  // Großer Text braucht 3:1 (AA) bzw. 4,5:1 (AAA); das Grau erreicht nur AA.
+  expect(befunde["gross-und-grau"]).toBe("contrast/text-enhanced:fail");
   expect(befunde["auf-bild"]).toBe("contrast/text-undetermined:untested");
   // `display: none` wird gar nicht erst geprüft.
   expect(befunde.versteckt).toBeUndefined();

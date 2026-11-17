@@ -51,7 +51,7 @@ describe("Regelbestand über der Arena", () => {
       <meta name="viewport" content="width=device-width, initial-scale=1"></head>
       <body>
         <a href="#inhalt" class="skip-link">Zum Inhalt springen</a>
-        <header><nav><a href="/">Start</a></nav></header>
+        <header><nav><a href="/" aria-current="page">Zur Startseite von Seite</a></nav></header>
         <main id="inhalt"><h1>Titel</h1><p>Text.</p></main>
         <footer>Impressum</footer>
       </body></html>`);
@@ -65,18 +65,19 @@ describe("Regelbestand über der Arena", () => {
   });
 
   it("meldet fehlende Landmarks als REVIEW, außer main", () => {
-    // Zwei Achsen: main fehlt nachweislich, eine Navigation zu erwarten ist
-    // dagegen eine Annahme. Der Unterschied steht im Outcome, nicht in einer
-    // dritten Achse für Gewissheit.
+    // Seit a11y-rules 0.26 sind alle `landmarks/*` Empfehlungen (Best Practice)
+    // und damit `REVIEW`, auch `main-missing`; ein `FAIL` mit Schlagwort gibt
+    // es dort nicht mehr.
     const doc = parse(`<!doctype html><html lang="de"><head><title>Seite</title>
       <meta name="viewport" content="width=device-width, initial-scale=1"></head>
       <body><h1>Titel</h1></body></html>`);
 
     const report = scan(doc.documentElement).documents[0]?.report;
     const outcome = (id: string) => report?.findings.find((f) => f.rule_id === id)?.outcome;
-    assert.equal(outcome("landmarks/main-missing"), "fail");
+    assert.equal(outcome("landmarks/main-missing"), "review");
     assert.equal(outcome("landmarks/navigation-missing"), "review");
-    assert.equal(outcome("keyboard/skip-link-missing"), "review");
+    // Ein Sprunglink wird erst erwartet, wenn es etwas zu überspringen gibt.
+    assert.equal(outcome("keyboard/skip-link-missing"), undefined);
     assert.equal(outcome("zoom/viewport-missing"), undefined);
   });
 
@@ -130,9 +131,11 @@ describe("Nicht gelaufen ist nicht bestanden", () => {
     const offen = report?.rule_runs.filter((r) => r.not_run !== undefined).map((r) => r.rule_id);
     assert.ok(offen?.includes("contrast/text-insufficient"));
     assert.ok(offen?.includes("contrast/text-undetermined"));
-    // Dazu die Heuristiken über Layout und Geometrie — alles aus Tier 3,
-    // nichts aus Tier 1 oder 2.
-    const tier3 = /^(contrast|order|motion|reflow|focus|targets)\/|^keyboard\/pointer-only$/;
+    // Dazu die Heuristiken über Layout und Geometrie sowie die Regeln auf
+    // Messspalten und Stylesheets (Rahmen, Drehung, Einfügen, Textabstand, Medien) — alles, was der
+    // Host erst mit dem Rendering-Durchgang liefert, nichts aus Tier 1 oder 2.
+    const tier3 =
+      /^(contrast|order|motion|reflow|focus|targets|orientation|frames|auth|text-spacing|text|media)\/|^(keyboard\/pointer-only|lists\/role-redundant|color\/link-indistinct|keyboard\/scrollable-region-not-focusable)$/;
     assert.deepEqual(
       offen?.filter((id) => !tier3.test(id)),
       [],

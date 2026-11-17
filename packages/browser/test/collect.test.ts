@@ -122,6 +122,31 @@ describe("Shadow DOM", () => {
     assert.equal(columns.parent[elementToId.get(span) as number], slotIndex);
   });
 
+  it("liefert keine Bereichsspalte ohne Shadow Root", () => {
+    const doc = parse("<html><body><p>Text</p></body></html>");
+    assert.equal(collect(doc.documentElement).columns.scopes, null);
+  });
+
+  it("gibt jedem Shadow Root einen Baumbereich; Zugewiesenes bleibt im äußeren", () => {
+    const doc = parse(
+      "<html><body><my-card><span>Inhalt</span></my-card><p>außen</p></body></html>",
+    );
+    const host = doc.querySelector("my-card") as Element;
+    host.attachShadow({ mode: "open" }).innerHTML = "<button>Mehr</button><slot></slot>";
+
+    const { columns, elementToId } = collect(doc.documentElement);
+    const scopes = columns.scopes as Uint32Array;
+    const bereich = (el: Element) => scopes[elementToId.get(el) as number];
+
+    assert.equal(bereich(host), 0);
+    assert.equal(bereich(doc.querySelector("p") as Element), 0);
+    // Das Element im Shadow Root hat einen eigenen Bereich, kleiner als die Knotenzahl.
+    const innen = Array.from(scopes).find((v) => v !== 0) as number;
+    assert.ok(innen > 0 && innen < columns.nodes);
+    // Über den Slot zugewiesen: Bereich des Dokuments, nicht des Shadow Roots.
+    assert.equal(bereich(doc.querySelector("span") as Element), 0);
+  });
+
   it("lässt nicht zugewiesene Licht-Kinder weg — sie werden nicht gerendert", () => {
     const doc = parse("<html><body><my-card><span>Inhalt</span></my-card></body></html>");
     const host = doc.querySelector("my-card") as Element;

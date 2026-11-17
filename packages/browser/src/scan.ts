@@ -11,7 +11,7 @@
 import { Scan } from "@casoon/a11y-wasm";
 
 import { collect, type FrameRef } from "./collect.ts";
-import { collectRendering, measureFocus } from "./rendering.ts";
+import { collectProbes, collectRendering, measureFocus } from "./rendering.ts";
 import type { Report } from "./report.ts";
 
 /** Ein Bereich, über den der Scan bewusst keine Aussage trifft. */
@@ -65,7 +65,13 @@ export interface ScanOptions {
    * Die Fokus-Sichtbarkeit messen (WCAG 2.4.7). Fokussiert jedes erreichbare
    * Element einmal und verändert damit den Zustand der Seite — die Seite
    * bekommt `focus`/`blur` und kann darauf reagieren. Nur mit `rendering`.
-   * Ohne ihn steht die Fokus-Sichtbarkeit als `UNTESTED` im Bericht.
+   * Ohne ihn steht die Fokus-Sichtbarkeit als nicht gelaufen im Bericht.
+   *
+   * Dasselbe Durchlauf misst, ob ein fixiertes oder klebendes Element das
+   * fokussierte Bedienelement überdeckt (`focus/obscured`,
+   * `focus/obscured-enhanced`). Er scrollt dafür mit `scrollIntoView` und
+   * stellt die Position des Fensters danach wieder her; verschachtelte
+   * Scrollbereiche werden nicht zurückgesetzt.
    */
   focus?: boolean;
 }
@@ -117,15 +123,38 @@ export function scan(
 
     let report: Report;
     try {
+      if (c.scopes !== null) arena.withScopes(c.scopes);
       if (options.rendering === true) {
         const view = pending.root.ownerDocument.defaultView;
         if (view !== null) {
           const renderingStarted = performance.now();
           const r = collectRendering(collected.idToElement, c.nodes, view);
-          if (options.focus === true) measureFocus(collected.idToElement, r, view);
+          if (options.focus === true)
+            measureFocus(collected.idToElement, collected.elementToId, r, view);
           renderingMs += performance.now() - renderingStarted;
           arena.withRendering(r.color, r.background, r.fontSizePx, r.fontWeight, r.flags);
           arena.withLayout(r.layoutFlags, r.order, r.minWidthPx, r.bounds);
+
+          // Messspalten für einzelne Regeln. Eine Spalte, die der Browser
+          // nicht messen kann oder die nicht angefordert wurde, wird nicht
+          // übergeben — die Regel steht dann als „nicht gelaufen“ im Bericht.
+          const probes = collectProbes(collected, pending.root, view);
+          arena.withFrames(probes.frames.nodes, probes.frames.reachable);
+          if (probes.transforms !== null) {
+            arena.withTransforms(
+              probes.transforms.nodes,
+              probes.transforms.transform,
+              probes.transforms.rotate,
+            );
+          }
+          if (r.focusCover !== null) {
+            arena.withFocusCover(
+              r.focusCover.nodes,
+              r.focusCover.points,
+              r.focusCover.covered,
+              r.focusCover.blocker,
+            );
+          }
         }
       }
       report = arena.run() as Report;

@@ -19,7 +19,7 @@ before(() => initWasm());
 const SEITE = `<!doctype html><html lang="de"><head><title>Live</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"></head><body>
   <a href="#inhalt">Zum Inhalt</a>
-  <header><nav aria-label="Haupt"><a href="/">Start</a></nav></header>
+  <header><nav aria-label="Haupt"><a href="/" aria-current="page">Zur Startseite von Live</a></nav></header>
   <main id="inhalt"><h1>Live</h1>
     <div id="bereich"><p>Text</p></div>
     <div id="daneben"><button type="button" id="ohne-namen"></button></div>
@@ -80,9 +80,9 @@ describe("mergeSubtrees", () => {
     const bereich = doc.getElementById("bereich") as Element;
 
     // Für sich allein gescannt hält der Bereich sich für ein Dokument ohne
-    // Titel, ohne h1 und ohne main-Landmark.
+    // h1.
     const allein = kennungen(scan(bereich));
-    assert.ok(allein.some((id) => id.startsWith("landmarks/")));
+    assert.ok(allein.includes("headings/none"));
 
     const nachher = mergeSubtrees(vorher, [{ wurzel: bereich, ergebnis: scan(bereich) }]);
     const ausDemTeilbaum = nachher.documents[1]?.report.findings ?? [];
@@ -115,14 +115,18 @@ describe("mergeSubtrees", () => {
     const ohneMain = parse(`<!doctype html><html lang="de"><head><title>T</title></head>
       <body><h1>T</h1><div id="bereich"><p>Text</p></div></body></html>`);
     const vorher = scan(ohneMain.documentElement);
-    const dokumentweit = kennungen(vorher).filter((id) => id.startsWith("landmarks/"));
+    // `content-outside` hängt an einem Knoten im Teilbaum und wird mit ihm neu
+    // bewertet; dokumentweit sind nur die fehlenden Landmarks.
+    const dokumentweit = kennungen(vorher).filter(
+      (id) => id.startsWith("landmarks/") && id.endsWith("-missing"),
+    );
     assert.ok(dokumentweit.length > 0);
 
     const bereich = ohneMain.getElementById("bereich") as Element;
     const nachher = mergeSubtrees(vorher, [{ wurzel: bereich, ergebnis: scan(bereich) }]);
 
     assert.deepEqual(
-      kennungen(nachher).filter((id) => id.startsWith("landmarks/")),
+      kennungen(nachher).filter((id) => id.startsWith("landmarks/") && id.endsWith("-missing")),
       dokumentweit,
     );
   });

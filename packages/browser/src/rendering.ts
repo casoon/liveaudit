@@ -16,7 +16,7 @@
  *    Optimierung für später, sondern Bedingung.
  */
 
-import { flatParent } from "./collect.ts";
+import { type Collected, flatParent } from "./collect.ts";
 
 /** Ein Farbwert, gepackt als `0xRRGGBBAA`. */
 export type PackedColor = number;
@@ -58,6 +58,17 @@ export interface RenderingColumns {
   minWidthPx: Float32Array;
   /** Vier Werte je Knoten (x, y, Breite, Höhe); Breite `NaN` = nicht erhoben. */
   bounds: Float32Array;
+  /** Fokus-Abdeckung, dünn besetzt; `null` ohne Fokusdurchlauf. */
+  focusCover: FocusCoverColumn | null;
+}
+
+/** Die Spalte für `Scan.withFocusCover`: alle Arrays parallel zu `nodes`. */
+export interface FocusCoverColumn {
+  nodes: Uint32Array;
+  points: Uint32Array;
+  covered: Uint32Array;
+  /** Arena-Index des obersten Blockers oder `-1`. */
+  blocker: Int32Array;
 }
 
 /**
@@ -403,7 +414,105 @@ export function collectRendering(
     order,
     minWidthPx,
     bounds,
+    focusCover: null,
   };
+}
+
+/** Die Spalten für `withFrames` und `withTransforms`. */
+export interface ProbeColumns {
+  frames: { nodes: Uint32Array; reachable: Uint8Array };
+  /** `null`, wenn weder `html` noch `body` im gescannten Teilbaum liegen. */
+  transforms: { nodes: Uint32Array; transform: string[]; rotate: string[] } | null;
+}
+
+/**
+ * Die Messungen, die der Browser ohne Eingriff in die Seite liefern kann:
+ * ob ein `<iframe>` lesbar ist, und `transform`/`rotate` von `html` und `body`.
+ *
+ * Bewusst **nicht** hier: die Einfüge-Probe (`withPasteProbes`, schickt
+ * Ereignisse an Seiten-Handler und schreibt `value`) und der Textabstand-Test
+ * (`withTextSpacing`, überschreibt Stile am Dokument). Beides verändert die
+ * geprüfte Seite; die Spalten bleiben ungeliefert, und die Regeln stehen als
+ * nicht gelaufen im Bericht.
+ */
+export function collectProbes(collected: Collected, root: Element, win: Window): ProbeColumns {
+  const frameNodes = collected.frames.map((f) => f.node);
+  const reachable = Uint8Array.from(collected.frames, (f) => (f.document === null ? 0 : 1));
+
+  const doc = root.ownerDocument;
+  const kandidaten: [number, Element][] = [];
+  for (const el of [doc.documentElement, doc.body]) {
+    const id = el === null ? undefined : collected.elementToId.get(el);
+    if (el !== null && id !== undefined) kandidaten.push([id, el]);
+  }
+  kandidaten.sort((a, b) => a[0] - b[0]);
+
+  const transforms =
+    kandidaten.length === 0
+      ? null
+      : {
+          nodes: Uint32Array.from(kandidaten, ([id]) => id),
+          transform: kandidaten.map(([, el]) => win.getComputedStyle(el).transform),
+          rotate: kandidaten.map(([, el]) => win.getComputedStyle(el).rotate),
+        };
+
+  return { frames: { nodes: Uint32Array.from(frameNodes), reachable }, transforms };
+}
+
+/** Raster der Abtastpunkte für die Fokus-Abdeckung: 3 mal 3, 1 px eingerückt. */
+const ABTAST_RASTER = 3;
+
+/**
+ * Tastet den Kasten eines fokussierten Elements ab und zählt, wie viele Punkte
+ * ein fixiertes oder klebendes fremdes Element überdeckt. `null`, wenn nicht
+ * messbar: Kasten zu klein oder ein Punkt außerhalb des Viewports.
+ */
+function messeAbdeckung(
+  el: Element,
+  win: Window,
+  ids: WeakMap<Element, number>,
+): { points: number; covered: number; blocker: number } | null {
+  const r = el.getBoundingClientRect();
+  if (r.width < ABTAST_RASTER + 1 || r.height < ABTAST_RASTER + 1) return null;
+  const wurzel = el.getRootNode() as Document | ShadowRoot;
+  if (!("elementsFromPoint" in wurzel)) return null;
+
+  const punkte: [number, number][] = [];
+  for (let j = 0; j < ABTAST_RASTER; j++) {
+    for (let k = 0; k < ABTAST_RASTER; k++) {
+      const x = r.left + 1 + (k * (r.width - 2)) / (ABTAST_RASTER - 1);
+      const y = r.top + 1 + (j * (r.height - 2)) / (ABTAST_RASTER - 1);
+      if (x < 0 || y < 0 || x >= win.innerWidth || y >= win.innerHeight) return null;
+      punkte.push([x, y]);
+    }
+  }
+
+  let covered = 0;
+  let blocker = -1;
+  for (const [x, y] of punkte) {
+    for (const hit of wurzel.elementsFromPoint(x, y)) {
+      // Ab dem Element selbst liegt alles darunter.
+      if (hit === el || el.contains(hit) || hit.contains(el)) {
+        if (hit === el || el.contains(hit)) break;
+        continue;
+      }
+      const fest = festerVorfahr(hit, win);
+      if (fest === null) continue;
+      covered++;
+      if (blocker === -1) blocker = ids.get(hit) ?? ids.get(fest) ?? -1;
+      break;
+    }
+  }
+  return { points: punkte.length, covered, blocker };
+}
+
+/** Das Element selbst oder sein nächster Vorfahr mit `position: fixed|sticky`. */
+function festerVorfahr(el: Element, win: Window): Element | null {
+  for (let e: Element | null = el; e !== null; e = e.parentElement) {
+    const pos = win.getComputedStyle(e).position;
+    if (pos === "fixed" || pos === "sticky") return e;
+  }
+  return null;
 }
 
 /**
@@ -437,18 +546,29 @@ function fokusStil(stil: CSSStyleDeclaration): string {
  * die Seite bekommt `focus`- und `blur`-Ereignisse und kann darauf reagieren
  * — ein Menü öffnen, etwas nachladen. Deshalb nur auf ausdrücklichen Wunsch
  * (`scan(root, { rendering: true, focus: true })`), und danach steht der
- * Fokus wieder dort, wo er war. Gescrollt wird nicht (`preventScroll`).
+ * Fokus wieder dort, wo er war. Fokussiert wird mit `preventScroll`; für die
+ * Abdeckungsmessung scrollt `scrollIntoView({ block: "nearest" })` danach wie
+ * für einen Tastaturnutzer, und die Fensterposition wird wiederhergestellt.
  *
  * Fokussiert wird mit `focusVisible: true`: Ob `:focus-visible` greift,
  * hängt sonst davon ab, ob zuletzt Maus oder Tastatur benutzt wurde.
  */
 export function measureFocus(
   idToElement: Map<number, Element>,
+  elementToId: WeakMap<Element, number>,
   columns: RenderingColumns,
   win: Window,
 ): void {
   const doc = win.document;
   const vorher = doc.activeElement;
+  const scrollX = win.scrollX;
+  const scrollY = win.scrollY;
+  const deckung = {
+    nodes: [] as number[],
+    points: [] as number[],
+    covered: [] as number[],
+    blocker: [] as number[],
+  };
 
   for (const [id, el] of idToElement) {
     if (id >= columns.layoutFlags.length) continue;
@@ -465,7 +585,24 @@ export function measureFocus(
     let l = (columns.layoutFlags[id] ?? 0) | LAYOUT_FOKUS_GEMESSEN;
     if (mit !== ohne) l |= LAYOUT_FOKUS_SICHTBAR;
     columns.layoutFlags[id] = l;
+
+    // Abdeckung: so scrollen, wie ein Tastaturnutzer es sähe, dann abtasten.
+    el.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const d = messeAbdeckung(el, win, elementToId);
+    if (d !== null) {
+      deckung.nodes.push(id);
+      deckung.points.push(d.points);
+      deckung.covered.push(d.covered);
+      deckung.blocker.push(d.blocker);
+    }
   }
+  win.scrollTo(scrollX, scrollY);
+  columns.focusCover = {
+    nodes: Uint32Array.from(deckung.nodes),
+    points: Uint32Array.from(deckung.points),
+    covered: Uint32Array.from(deckung.covered),
+    blocker: Int32Array.from(deckung.blocker),
+  };
 
   // Kein `instanceof HTMLElement`: Ein Same-Origin-Rahmen ist ein eigenes
   // Realm mit eigenen Konstruktoren.

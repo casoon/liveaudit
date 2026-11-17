@@ -55,10 +55,53 @@ test("was richtig gebaut ist, bleibt ruhig", async ({ page }) => {
   expect(b.a ?? []).not.toContain("focus/obscured:review");
 });
 
-test("ohne Fokus-Durchgang ist die Fokus-Sichtbarkeit UNTESTED", async ({ page }) => {
+test("ohne Fokus-Durchgang steht die Fokus-Sichtbarkeit als nicht gelaufen im Bericht", async ({
+  page,
+}) => {
+  // `focus/indicator-unmeasured` gibt es seit a11y-rules 0.27 nicht mehr: Ein
+  // Host ohne Fokus-Messung bekommt `focus/indicator-missing` mit
+  // `NotRun::CapabilityMissing` in `rule_runs` -- kein Befund, kein Bestehen.
   const b = await befunde(page, false);
-  expect(b.html).toContain("focus/indicator-unmeasured:untested");
+  expect(Object.values(b).flat()).not.toContain("focus/indicator-unmeasured:untested");
   expect(b["ohne-fokus"] ?? []).not.toContain("focus/indicator-missing:review");
+
+  const lauf = await page.evaluate(async () => {
+    const ergebnis = await window.LiveAudit.scan(document.documentElement, { rendering: true });
+    return ergebnis.documents[0]?.report.rule_runs.find(
+      (r) => r.rule_id === "focus/indicator-missing",
+    );
+  });
+  expect(lauf?.not_run).toBe("capability_missing");
+});
+
+test("der Fokus-Durchgang misst, dass die Leiste das Element beim Fokussieren überdeckt", async ({
+  page,
+}) => {
+  const b = await befunde(page, true);
+  expect(b.verdeckt).toContain("focus/obscured-enhanced:review");
+  expect(b.a ?? []).not.toContain("focus/obscured-enhanced:review");
+});
+
+test("der Fokus-Durchgang liefert die Abdeckungsmessung", async ({ page }) => {
+  const lauf = await page.evaluate(async () => {
+    const ergebnis = await window.LiveAudit.scan(document.documentElement, {
+      rendering: true,
+      focus: true,
+    });
+    const runs = ergebnis.documents[0]?.report.rule_runs ?? [];
+    return {
+      indicator: runs.find((r) => r.rule_id === "focus/indicator-missing")?.not_run,
+      enhanced: runs.find((r) => r.rule_id === "focus/obscured-enhanced")?.not_run,
+      frames: runs.find((r) => r.rule_id === "frames/cross-origin")?.not_run,
+      root: runs.find((r) => r.rule_id === "orientation/root-rotated")?.not_run,
+    };
+  });
+  expect(lauf).toEqual({
+    indicator: undefined,
+    enhanced: undefined,
+    frames: undefined,
+    root: undefined,
+  });
 });
 
 test("der Fokus-Durchgang findet den fehlenden Rahmen und stellt den Fokus zurück", async ({
