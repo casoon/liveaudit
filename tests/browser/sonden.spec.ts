@@ -223,5 +223,6 @@ test("eine gedrehte Wurzel meldet orientation/root-rotated", async ({ page }) =>
 
   const { nach, probes } = await scanne(page, []);
   expect(probes?.columns.transforms).toBeGreaterThan(0);
-  expect(nach.html).toContain("orientation/root-rotated:fail");
+  // Seit a11y-rules 0.30.7 meldet eine gedrehte Wurzel REVIEW: ein Schnappschuss sieht nur eine Ausrichtung.
+  expect(nach.html).toContain("orientation/root-rotated:review");
 });

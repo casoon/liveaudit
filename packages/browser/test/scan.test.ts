@@ -137,7 +137,7 @@ describe("Nicht gelaufen ist nicht bestanden", () => {
     // frames/cross-origin, orientation/root-rotated, auth/paste-blocked,
     // focus/obscured-enhanced, text-spacing/clipped).
     const tier3 =
-      /^(contrast|order|motion|reflow|focus|targets|lists|color|text-spacing|auth|orientation|frames|text)\/|^keyboard\/(pointer-only|scrollable-region-not-focusable)$/;
+      /^(contrast|order|motion|reflow|focus|targets|lists|color|text-spacing|auth|orientation|frames|text|media)\/|^keyboard\/(pointer-only|scrollable-region-not-focusable)$/;
     assert.deepEqual(
       offen?.filter((id) => !tier3.test(id)),
       [],

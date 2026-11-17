@@ -19,6 +19,10 @@ package keeps its own release history in [npm/CHANGELOG.md](npm/CHANGELOG.md).
 
 ### Changed
 
+- **Rules:** `@casoon/a11y-wasm` 0.16.1 (`a11y-rules` 0.30.11) replaces 0.16.0: the ACT corrections and
+  `orientation/locked`, `timing/meta-refresh-enhanced`, `media/audio-autoplay-measured`. The last one stays
+  under "Rules that did not run" until the collector measures media playback.
+- **Build:** the WebAssembly size budget goes from 180 to 200 KB gzip (the module is 195.0 KB now).
 - **Rules:** `@casoon/a11y-wasm` 0.16.0 replaces 0.15.2. A heuristic without layout columns is now recorded as
   not run instead of an `UNTESTED` finding on the root.
 

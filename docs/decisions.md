@@ -197,7 +197,7 @@ unter `style-src 'self'` fest, gegengeprüft mit dem alten `<style>`.
 ## Bundle-Budget wird im Build erzwungen
 
 Entschieden: Der Build bricht ab, wenn `dist/` die festgelegten Grenzen
-überschreitet — 25 KB gzip für `inspector.js`, 180 KB gzip für das WASM-Modul.
+überschreitet — 25 KB gzip für `inspector.js`, 200 KB gzip für das WASM-Modul.
 
 *Grund:* Ein Budget, das nur berichtet wird, ist keins. Die Größe wächst
 schleichend mit jeder Regel und jedem UI-Detail; ohne Abbruch merkt es niemand,
@@ -228,6 +228,11 @@ halten, ohne den Regelbestand zu beschneiden — und der gehört nach barrierlab
 nicht hierher. 180 KB lassen rund 6 % Luft: die Grenze bleibt in Reichweite und
 macht den nächsten Zuwachs sichtbar. Ob der Zuwachs von 92 auf 169 KB in
 barrierlab zu drücken ist (Größenbudget dort), ist eine eigene Frage.
+
+*Angehoben am 17.11.2026:* Das WASM-Budget von 180 auf 200 KB. Mit
+`@casoon/a11y-wasm` 0.16.1 (`a11y-rules` 0.30.11) wiegt das Modul 195,0 KB gzip;
+barrierlab selbst führt seit dem 14.11.2026 ein Budget von 195 KB (ACT-Korrekturen,
+Messspalten). Der Zuwachs kommt aus dem Regelbestand, nicht aus diesem Repository.
 
 ## „Inspector-Layer", nicht „Overlay"
 
