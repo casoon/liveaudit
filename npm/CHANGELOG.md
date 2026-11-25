@@ -6,7 +6,9 @@ minor version.
 
 ## [Unreleased]
 
-**Bundled rules:** `@casoon/a11y-wasm` 0.17.0 (was 0.3.0); changed findings, so at least a minor version.
+## [0.3.0] - 2026-11-25
+
+**Bundled rules:** `@casoon/a11y-wasm` 0.17.0 (was 0.3.0); changed findings, so a minor version.
 
 ### Added
 
