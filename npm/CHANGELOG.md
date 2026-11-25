@@ -6,8 +6,11 @@ minor version.
 
 ## [Unreleased]
 
+**Bundled rules:** `@casoon/a11y-wasm` 0.17.0 (was 0.3.0); changed findings, so at least a minor version.
+
 ### Added
 
+- **Scan:** `probes: ["media"]` measures autoplay `<audio>`/`<video>` for `media/audio-autoplay-measured` (WCAG 1.4.2): playing, muted, duration and audible sound. It changes nothing on the page; media that is not ready stays unmeasured, never "paused". Used with `scanDocument`, `show` and `watch`; live rescans do not re-measure.
 - **Scan:** `probes: ["paste", "focus", "spacing"]` runs the page-touching probes for `auth/paste-blocked`,
   `focus/obscured`, `focus/obscured-enhanced` and `text-spacing/clipped`; opt-in, needs `rendering: true`.
   Frame access and the root transform are measured with `rendering: true`.
