@@ -263,6 +263,10 @@ behaves sensibly. These are reported as `UNTESTED` with a checklist. See
 The documentation under `docs/` is written in German; this README is the English
 entry point.
 
+## Author
+
+Built and maintained by [Jörn Seidel](https://www.casoon.de/joern-seidel/) ([CASOON](https://www.casoon.de/)). Background and design decisions are described in an article on Insights (in German): [LiveAudit: Barrierefreiheit dort prüfen, wo die Seite läuft](https://insights.casoon.de/artikel/liveaudit-accessibility-inspector-statt-overlay/).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
